@@ -2,10 +2,10 @@ import streamlit as st
 from groq import Groq
 import time
 
-# 1. Config dyal l-page (Smiya w l-icon)
+# 1. Config dyal l-page
 st.set_page_config(page_title="CV Optimizer AI", page_icon="🚀", layout="wide")
 
-# 2. Design (CSS) - Purple Style dyal Startgate
+# 2. Design Purple Style
 st.markdown("""
     <style>
     .stApp { background-color: #F8F9FC; }
@@ -13,63 +13,50 @@ st.markdown("""
     .stButton>button { 
         background-color: #6366F1; color: white; border-radius: 10px; 
         border: none; padding: 12px; font-weight: bold; width: 100%;
-        transition: 0.3s;
     }
-    .stButton>button:hover { background-color: #4F46E5; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
-    .stTextArea textarea { border-radius: 10px; }
+    .stButton>button:hover { background-color: #4F46E5; }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Sidebar (Navigation)
+# 3. Sidebar
 with st.sidebar:
     st.markdown("<h2 style='color: #6366F1;'>📄 CV Optimizer</h2>", unsafe_allow_html=True)
-    st.write("Agentic AI System v1.0")
+    st.write("v1.0 Agentic AI")
     st.write("---")
-    st.button("🏠 Inicio")
-    st.button("🕒 Mis CVs")
-    st.button("🏢 Empresas")
-    st.markdown("---")
-    st.success("**Status**: Online")
-    st.info("Powered by Llama 3.3 70B")
+    st.info("Llama 3.3 Connected")
 
-# 4. Main Interface
+# 4. Main UI
 st.title("CV Optimizer AI")
-st.write("Transforma tu perfil profesional para el mercado internacional (Canadá, Europa, etc.)")
+st.write("Transforma tu CV para el mercado internacional")
 
 col1, col2 = st.columns([1, 1], gap="large")
 
 with col1:
-    st.subheader("📥 Datos de Entrada")
-    tab1, tab2 = st.tabs(["📤 Subir PDF", "⌨️ Pegar Texto"])
+    cv_content = st.text_area("Pega tu CV aquí", height=300)
+    job_target = st.text_input("Puesto objetivo (Ej: Developer in France)")
     
-    with tab2:
-        cv_content = st.text_area("Pega el contenido de tu CV aquí", height=250, placeholder="Copia y pega tu experiencia profesional...")
-    
-    with tab1:
-        st.file_uploader("Seleccionar Archivo PDF", type=["pdf"])
-        st.caption("Nota: La función de subida directa estará disponible pronto.")
-
-    job_target = st.text_input("Puesto objetivo y País", placeholder="Ej: Receptionist in Canada")
-    
-    # ---------------------------------------------------------
-    # 📍 HNA T-7ET L-API KEY DYALK (OBLIGATOIRE)
-    # ---------------------------------------------------------
+    # 📍 HNA DIR L-API KEY DYALK (OBLIGATOIRE)
     MY_API_KEY = "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" 
-    # ---------------------------------------------------------
 
     if st.button("Generar CV Optimizado →"):
         if cv_content and job_target and MY_API_KEY != "HNA_7ET_L_KEY_DYALK":
             try:
                 client = Groq(api_key=MY_API_KEY)
-                
-                with st.status("Ejecutando Agentes de IA...", expanded=True) as status:
-                    st.write("🔍 **Agent 1**: Analizando estructura del CV...")
-                    time.sleep(1)
-                    st.write("🤖 **Agent 2**: Optimizando palabras clave (ATS)...")
-                    
-                    # AI Call
+                with st.status("Procesando...", expanded=True) as status:
                     response = client.chat.completions.create(
                         model="llama-3.3-70b-versatile",
-                        messages=[{"role": "user", "content": f"Optimize this CV for {job_target} focusing on Canada/Europe standards: {cv_content}"}],
-                        temperature=0.3
+                        messages=[{"role": "user", "content": f"Optimize this CV for {job_target}: {cv_content}"}]
                     )
+                    st.session_state['result'] = response.choices[0].message.content
+                    status.update(label="✅ ¡Completado!", state="complete")
+            except Exception as e:
+                st.error(f"Error: {e}")
+        else:
+            st.warning("Dakhal l-CV w l-API Key dyalk!")
+
+with col2:
+    st.subheader("Resultado")
+    if 'result' in st.session_state:
+        st.markdown(st.session_state['result'])
+    else:
+        st.info("El resultado aparecerá aquí.")

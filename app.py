@@ -5,141 +5,115 @@ from PyPDF2 import PdfReader
 import docx2txt
 
 # 1. Page Config
-st.set_page_config(page_title="Global CV Optimizer", page_icon="🌍", layout="wide")
+st.set_page_config(page_title="Career Pro: CV & Letter", page_icon="💼", layout="wide")
 
-# 2. Advanced CSS for Professional Display
+# 2. CSS Style (Standard Fonts for ATS)
 st.markdown("""
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-    .stApp { background-color: #F8F9FA; }
-    .doc-container {
-        background-color: white;
-        padding: 50px 60px;
-        margin: auto;
-        color: #000 !important;
-        font-family: 'Arial', sans-serif;
-        line-height: 1.6;
-        border: 1px solid #DDD;
-        max-width: 800px;
+    .stApp { background-color: #F9FAFB; }
+    .doc-preview {
+        background-color: white; padding: 60px; margin: 20px auto;
+        color: #000 !important; font-family: 'Times New Roman', serif;
+        line-height: 1.6; border: 1px solid #DDD; max-width: 800px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
-    .stButton>button { width: 100%; font-weight: bold; border-radius: 6px; }
+    .stButton>button { width: 100%; border-radius: 6px; font-weight: bold; background-color: #C53030; color: white; height: 3em; }
     </style>
     """, unsafe_allow_html=True)
 
-# Helper function to extract text
-def get_text_from_file(file):
+# Function to extract text from files
+def get_text_from_upload(file):
     try:
         if file.type == "application/pdf":
-            reader = PdfReader(file)
-            return "".join([page.extract_text() for page in reader.pages])
-        elif file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-            return docx2txt.process(file)
+            return " ".join([p.extract_text() for p in PdfReader(file).pages])
+        return docx2txt.process(file)
     except Exception as e:
-        return f"Error reading file: {e}"
-    return None
+        return f"Error: {e}"
 
 # 3. Sidebar
 with st.sidebar:
-    st.header("⚙️ Settings")
-    MY_API_KEY = st.text_input("Groq API Key", type="password")
-    region = st.selectbox("🌍 Select Target Region", ["Canada (Achievement-Based)", "Europe (Europass/Modern)"])
-    st.divider()
-    st.info("The AI will adjust the formatting and tone based on the selected region's recruitment standards.")
+    st.title("🚀 Career Engine")
+    api_key = st.text_input("Groq API Key", type="password")
+    market = st.selectbox("Target Market", ["Canada (Achievement Focus)", "Europe (Structured/Modern)"])
+    st.info("Don't forget to create requirements.txt with: streamlit, groq, PyPDF2, docx2txt")
 
-# 4. Main UI
-st.title("ATS Multi-Region CV Optimizer")
+# 4. Input Section
+st.title("CV & Cover Letter Pro Optimizer")
+c1, c2 = st.columns([1.2, 1], gap="large")
 
-col_in, col_settings = st.columns([1.5, 1], gap="large")
+with c1:
+    st.subheader("📤 Source Materials")
+    up_file = st.file_uploader("Upload your CV (PDF/DOCX)", type=["pdf", "docx"])
+    manual_cv = st.text_area("Or paste text here:", height=200)
+    input_text = get_text_from_upload(up_file) if up_file else manual_cv
 
-with col_in:
-    st.subheader("📤 Upload or Paste CV")
-    uploaded_file = st.file_uploader("Upload your current CV (PDF/DOCX)", type=["pdf", "docx"])
-    cv_manual = st.text_area("Or paste content manually:", height=250)
+with c2:
+    st.subheader("🎯 Optimization Settings")
+    target_job = st.text_input("Target Job Title", value="Digital Marketing Specialist")
     
-    input_text = ""
-    if uploaded_file:
-        input_text = get_text_from_file(uploaded_file)
-        st.success("✅ File loaded!")
-    else:
-        input_text = cv_manual
-
-with col_settings:
-    st.subheader("🎯 Job Details")
-    job_title = st.text_input("Target Job Title", placeholder="e.g. Senior Marketing Manager")
+    # Automatic professional leveling for ENCG profile
+    eng_lvl = st.selectbox("English Level", ["Full Professional Proficiency", "Bilingual", "Native"])
+    fr_lvl = st.selectbox("French Level", ["Professional Working Proficiency", "Full Professional", "Native"])
     
-    col_l1, col_l2 = st.columns(2)
-    with col_l1:
-        eng_lvl = st.select_slider("English", options=["Basic", "Intermediate", "Advanced", "Native"])
-    with col_l2:
-        fr_lvl = st.select_slider("French", options=["Basic", "Intermediate", "Advanced", "Native", "None"])
-        
-    generate_btn = st.button("✨ Optimize My CV Now")
+    generate_all = st.button("🔥 Generate Pro CV & Cover Letter")
 
-# 5. AI Agent Logic
-if generate_btn:
-    if not MY_API_KEY:
-        st.error("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")
-    elif not input_text:
-        st.warning("Please provide your CV content.")
+# 5. The AI Processing
+if generate_all:
+    if not api_key: st.error("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")
+    elif not input_text: st.warning("Please provide your CV content")
     else:
         try:
-            client = Groq(api_key=MY_API_KEY)
-            with st.spinner(f"Restructuring for {region}..."):
+            client = Groq(api_key=api_key)
+            with st.spinner("Writing your professional documents..."):
                 
-                # Custom instructions based on region
-                if "Canada" in region:
-                    region_guidelines = (
-                        "Use Canadian standards: Focus on quantitative ACHIEVEMENTS (metrics). "
-                        "Reverse chronological order. Professional summary at the top integrating motivation. "
-                        "NO personal details (age, photo). Plain, clean ATS-friendly layout."
-                    )
-                else:
-                    region_guidelines = (
-                        "Use European (Europass/Modern) standards: Structured sections, clear skills categorization. "
-                        "Focus on both responsibilities and key projects. Professional and clean tone. "
-                        "Include a 'Core Competencies' section clearly visible."
-                    )
-
-                prompt = f"""
-                GUIDELINES: {region_guidelines}
-                TARGET JOB: {job_title}
-                LANGUAGES: English ({eng_lvl}), French ({fr_lvl})
-                CV DATA: {input_text}
-                
-                Rewrite this CV to be 100% ATS-friendly. Use bold headers. No icons. No tables. 
-                Ensure the final result looks professional when rendered in HTML.
+                # Rule logic for high competition markets
+                sys_rules = f"""
+                1. No emotional fluff. Professional and direct.
+                2. Use Action Verbs (Spearheaded, Orchestrated, Administered).
+                3. Annualize budgets (e.g., $5,000 monthly -> $60,000 Annual budget).
+                4. Languages: English ({eng_lvl}), French ({fr_lvl}).
+                5. Location: Focus on City, Country (no relocation mention).
+                6. CV Structure: Professional Summary, Core Competencies, Experience, Education, Certifications, Languages.
                 """
 
-                response = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=[{"role": "system", "content": "You are a world-class executive resume writer."},
-                              {"role": "user", "content": prompt}]
-                )
-                st.session_state['cv_result'] = response.choices[0].message.content
+                # CV Generation
+                cv_p = f"Rewrite this CV for {target_job} in {market}. Rules: {sys_rules}. CV Data: {input_text}"
+                cv_res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":cv_p}])
+                st.session_state['cv_final'] = cv_res.choices[0].message.content
+
+                # Cover Letter Generation (New Agent)
+                cl_p = f"Write a professional and persuasive Cover Letter for {target_job} in {market}. Match the achievements mentioned in the CV: {input_text}. Be concise and high-impact."
+                cl_res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":cl_p}])
+                st.session_state['cl_final'] = cl_res.choices[0].message.content
+                
+                st.balloons()
         except Exception as e:
             st.error(f"Error: {e}")
 
-# 6. Result & PDF Download
-if 'cv_result' in st.session_state:
-    st.divider()
-    # Formatting for HTML
-    final_html = st.session_state['cv_result'].replace("\n", "<br>").replace("**", "<b>")
+# 6. Preview & Fixed Download Section
+if 'cv_final' in st.session_state:
+    st.write("---")
+    tab_cv, tab_cl = st.tabs(["📄 Optimized Resume", "✉️ Professional Cover Letter"])
     
-    st.markdown(f'<div id="cv_output_final" class="doc-container">{final_html}</div>', unsafe_allow_html=True)
-    
-    if st.button("📥 Download My Optimized PDF"):
-        # Improved JS for clean PDF export
-        js_code = f"""
-        <script>
-            var element = window.parent.document.getElementById('cv_output_final');
-            var opt = {{
-                margin: [10, 15, 10, 15],
-                filename: '{region.split(" ")[0]}_CV_{job_title.replace(" ", "_")}.pdf',
-                image: {{ type: 'jpeg', quality: 0.98 }},
-                html2canvas: {{ scale: 2, useCORS: true }},
-                jsPDF: {{ unit: 'mm', format: 'a4', orientation: 'portrait' }}
-            }};
-            window.parent.html2pdf().from(element).set(opt).save();
-        </script>
-        """
-        components.html(js_code, height=0)
+    with tab_cv:
+        html_cv = st.session_state['cv_final'].replace("\n", "<br>").replace("**", "<b>")
+        st.markdown(f'<div id="cv_box" class="doc-preview">{html_cv}</div>', unsafe_allow_html=True)
+        if st.button("📥 Download CV (PDF)"):
+            components.html(f"""
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+                <script>
+                var opt = {{ margin: 10, filename: 'CV_Optimized.pdf', html2canvas: {{ scale: 2 }}, jsPDF: {{ format: 'a4' }} }};
+                html2pdf().from(window.parent.document.getElementById('cv_box')).set(opt).save();
+                </script>""", height=0)
+
+    with tab_cl:
+        html_cl = st.session_state['cl_final'].replace("\n", "<br>").replace("**", "<b>")
+        st.markdown(f'<div id="cl_box" class="doc-preview">{html_cl}</div>', unsafe_allow_html=True)
+        if st.button("📥 Download Cover Letter (PDF)"):
+            components.html(f"""
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+                <script>
+                var opt = {{ margin: 10, filename: 'Cover_Letter.pdf', html2canvas: {{ scale: 2 }}, jsPDF: {{ format: 'a4' }} }};
+                html2pdf().from(window.parent.document.getElementById('cl_box')).set(opt).save();
+                </script>""", height=0)

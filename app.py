@@ -1,139 +1,145 @@
 import streamlit as st
 from groq import Groq
 import streamlit.components.v1 as components
+from PyPDF2 import PdfReader
+import docx2txt
 
-# 1. Page Configuration
-st.set_page_config(page_title="Canada CV ATS Pro", page_icon="🇨🇦", layout="wide")
+# 1. Page Config
+st.set_page_config(page_title="Global CV Optimizer", page_icon="🌍", layout="wide")
 
-# 2. Advanced CSS & JS for PDF Generation
+# 2. Advanced CSS for Professional Display
 st.markdown("""
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-    .stApp { background-color: #F4F7F9; }
-    
-    /* Document Style: Clean, Professional, No Graphics for ATS */
+    .stApp { background-color: #F8F9FA; }
     .doc-container {
         background-color: white;
-        padding: 45px 60px;
+        padding: 50px 60px;
         margin: auto;
         color: #000 !important;
-        font-family: 'Times New Roman', serif; /* Best for ATS */
-        line-height: 1.5;
-        border: 1px solid #EEE;
+        font-family: 'Arial', sans-serif;
+        line-height: 1.6;
+        border: 1px solid #DDD;
+        max-width: 800px;
     }
-    
-    .stButton>button {
-        background-color: #C53030;
-        color: white;
-        font-weight: bold;
-        border-radius: 4px;
-        border: none;
-        padding: 10px 20px;
-    }
+    .stButton>button { width: 100%; font-weight: bold; border-radius: 6px; }
     </style>
     """, unsafe_allow_html=True)
 
+# Helper function to extract text
+def get_text_from_file(file):
+    try:
+        if file.type == "application/pdf":
+            reader = PdfReader(file)
+            return "".join([page.extract_text() for page in reader.pages])
+        elif file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+            return docx2txt.process(file)
+    except Exception as e:
+        return f"Error reading file: {e}"
+    return None
+
 # 3. Sidebar
 with st.sidebar:
-    st.markdown("<h2 style='color: #C53030;'>🇨🇦 Canada Resume Builder</h2>", unsafe_allow_html=True)
-    st.write("---")
-    MY_API_KEY = st.text_input("🔑 Groq API Key", type="password", help="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")
-    st.info("💡 **Tip:** In Canada, don't include your photo, age, or marital status to avoid bias.")
+    st.header("⚙️ Settings")
+    MY_API_KEY = st.text_input("Groq API Key", type="password")
+    region = st.selectbox("🌍 Select Target Region", ["Canada (Achievement-Based)", "Europe (Europass/Modern)"])
+    st.divider()
+    st.info("The AI will adjust the formatting and tone based on the selected region's recruitment standards.")
 
-# 4. Inputs
-st.title("Professional CV Optimizer")
-col1, col2 = st.columns([1, 1], gap="large")
+# 4. Main UI
+st.title("ATS Multi-Region CV Optimizer")
 
-with col1:
-    st.subheader("Current CV Details")
-    cv_text = st.text_area("Paste your current CV / Experience:", height=300, 
-                           placeholder="Yassine El Amrani - Digital Marketing Specialist...")
+col_in, col_settings = st.columns([1.5, 1], gap="large")
+
+with col_in:
+    st.subheader("📤 Upload or Paste CV")
+    uploaded_file = st.file_uploader("Upload your current CV (PDF/DOCX)", type=["pdf", "docx"])
+    cv_manual = st.text_area("Or paste content manually:", height=250)
     
-    certifications = st.text_input("Certifications (Optional)", placeholder="e.g. Google Ads, HubSpot, Blueprint")
+    input_text = ""
+    if uploaded_file:
+        input_text = get_text_from_file(uploaded_file)
+        st.success("✅ File loaded!")
+    else:
+        input_text = cv_manual
 
-with col2:
-    st.subheader("Target & Languages")
-    job_target = st.text_input("Job Title You're Applying For", value="Digital Marketing Specialist")
+with col_settings:
+    st.subheader("🎯 Job Details")
+    job_title = st.text_input("Target Job Title", placeholder="e.g. Senior Marketing Manager")
     
-    lang_col1, lang_col2 = st.columns(2)
-    with lang_col1:
-        eng_lvl = st.selectbox("English Proficiency", ["Bilingual", "Professional Working", "Full Professional", "Native"])
-    with lang_col2:
-        fr_lvl = st.selectbox("French Proficiency", ["Professional Working", "Bilingual", "Native", "Basic", "None"])
+    col_l1, col_l2 = st.columns(2)
+    with col_l1:
+        eng_lvl = st.select_slider("English", options=["Basic", "Intermediate", "Advanced", "Native"])
+    with col_l2:
+        fr_lvl = st.select_slider("French", options=["Basic", "Intermediate", "Advanced", "Native", "None"])
+        
+    generate_btn = st.button("✨ Optimize My CV Now")
 
-    generate_btn = st.button("Generate & Optimize for Canada ✨")
-
-# 5. AI Logic
+# 5. AI Agent Logic
 if generate_btn:
     if not MY_API_KEY:
-        st.error("Please enter your Groq API Key in the sidebar.")
-    elif not cv_text:
-        st.warning("Please paste your CV content.")
+        st.error("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")
+    elif not input_text:
+        st.warning("Please provide your CV content.")
     else:
         try:
             client = Groq(api_key=MY_API_KEY)
-            with st.spinner("AI is restructuring your CV for Canadian ATS standards..."):
+            with st.spinner(f"Restructuring for {region}..."):
                 
-                # System Prompt: Strict Canadian ATS Rules
-                sys_msg = (
-                    "You are a Senior Canadian Recruiter. Rewrite the user's CV to pass ATS filters. "
-                    "1. Combine the professional summary with their motivation at the top. "
-                    "2. Transform responsibilities into quantitative ACHIEVEMENTS (use numbers/metrics). "
-                    "3. Use standard headers: PROFESSIONAL SUMMARY, CORE COMPETENCIES, PROFESSIONAL EXPERIENCE, EDUCATION, CERTIFICATIONS, and LANGUAGES. "
-                    "4. Remove any mention of 'Open to relocation' - keep only the current city. "
-                    "5. Use action verbs (Spearheaded, Optimized, Orchestrated). "
-                    "Format the output in clean Markdown with bold headers."
-                )
+                # Custom instructions based on region
+                if "Canada" in region:
+                    region_guidelines = (
+                        "Use Canadian standards: Focus on quantitative ACHIEVEMENTS (metrics). "
+                        "Reverse chronological order. Professional summary at the top integrating motivation. "
+                        "NO personal details (age, photo). Plain, clean ATS-friendly layout."
+                    )
+                else:
+                    region_guidelines = (
+                        "Use European (Europass/Modern) standards: Structured sections, clear skills categorization. "
+                        "Focus on both responsibilities and key projects. Professional and clean tone. "
+                        "Include a 'Core Competencies' section clearly visible."
+                    )
+
+                prompt = f"""
+                GUIDELINES: {region_guidelines}
+                TARGET JOB: {job_title}
+                LANGUAGES: English ({eng_lvl}), French ({fr_lvl})
+                CV DATA: {input_text}
                 
-                user_msg = f"""
-                Target Job: {job_target}
-                Languages: English ({eng_lvl}), French ({fr_lvl})
-                Certifications: {certifications}
-                CV Data: {cv_text}
+                Rewrite this CV to be 100% ATS-friendly. Use bold headers. No icons. No tables. 
+                Ensure the final result looks professional when rendered in HTML.
                 """
 
-                chat_completion = client.chat.completions.create(
+                response = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
-                    messages=[
-                        {"role": "system", "content": sys_msg},
-                        {"role": "user", "content": user_msg}
-                    ],
-                    temperature=0.3 # Low temperature for professional accuracy
+                    messages=[{"role": "system", "content": "You are a world-class executive resume writer."},
+                              {"role": "user", "content": prompt}]
                 )
-                
-                st.session_state['final_cv'] = chat_completion.choices[0].message.content
-                st.balloons()
-
+                st.session_state['cv_result'] = response.choices[0].message.content
         except Exception as e:
             st.error(f"Error: {e}")
 
-# 6. Display & Download
-if 'final_cv' in st.session_state:
-    st.write("---")
-    st.subheader("Preview Your Optimized CV")
+# 6. Result & PDF Download
+if 'cv_result' in st.session_state:
+    st.divider()
+    # Formatting for HTML
+    final_html = st.session_state['cv_result'].replace("\n", "<br>").replace("**", "<b>")
     
-    # Convert Markdown to HTML for the PDF generator
-    cv_markdown = st.session_state['final_cv']
-    # Small trick to handle markdown lines for HTML rendering
-    cv_html_ready = cv_markdown.replace("\n", "<br>").replace("### ", "<h3>").replace("## ", "<h2>").replace("**", "<b>").replace("<b> ", "<b>")
-
-    # The Container for PDF
-    st.markdown(f'<div id="printable_cv" class="doc-container">{cv_html_ready}</div>', unsafe_allow_html=True)
-
-    st.write("")
-    if st.button("📥 Download PDF"):
-        # JavaScript for high-quality PDF export
-        js_download = f"""
+    st.markdown(f'<div id="cv_output_final" class="doc-container">{final_html}</div>', unsafe_allow_html=True)
+    
+    if st.button("📥 Download My Optimized PDF"):
+        # Improved JS for clean PDF export
+        js_code = f"""
         <script>
-            var element = window.parent.document.getElementById('printable_cv');
+            var element = window.parent.document.getElementById('cv_output_final');
             var opt = {{
-                margin: [15, 15, 15, 15],
-                filename: 'CV_Canada_{job_target.replace(" ", "_")}.pdf',
+                margin: [10, 15, 10, 15],
+                filename: '{region.split(" ")[0]}_CV_{job_title.replace(" ", "_")}.pdf',
                 image: {{ type: 'jpeg', quality: 0.98 }},
-                html2canvas: {{ scale: 3, useCORS: true, letterRendering: true }},
+                html2canvas: {{ scale: 2, useCORS: true }},
                 jsPDF: {{ unit: 'mm', format: 'a4', orientation: 'portrait' }}
             }};
             window.parent.html2pdf().from(element).set(opt).save();
         </script>
         """
-        components.html(js_download, height=0)
+        components.html(js_code, height=0)

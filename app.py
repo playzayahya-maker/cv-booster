@@ -132,11 +132,11 @@ if 'cv_final' in st.session_state:
         cv_clean = st.session_state['cv_final'].replace("\n", "<br>").replace("**", "<b>")
         st.markdown(f'<div id="cv_box" class="doc-preview">{cv_clean}</div>', unsafe_allow_html=True)
         download_button("cv_box", "Optimized_CV.pdf")
-
-    with tab_cl:
-        cl_clean = st.session_state['cl_final'].replace("\n", "<br>").replace("**", "<b>")
-        st.markdown(f'<div id="cl_box" class="doc-preview">{cl_clean}</div>', unsafe_allow_html=True)
-        download_button("cl_box", "Cover_Letter.pdf")
-        cl_clean = st.session_state['final_cl'].replace("\n", "<br>").replace("**", "<b>")
-        st.markdown(f'<div id="cl_view" class="doc-preview">{cl_clean}</div>', unsafe_allow_html=True)
-        pdf_button("cl_view", f"CoverLetter_{job_target.replace(' ', '_')}.pdf")
+        
+ # Create the tabs first
+   t_cv, t_cl = st.tabs(["📄 Professional CV", "✉️ Cover Letter"])
+  # Now you can use t_cl
+     with t_cl:
+    cl_clean = st.session_state['final_cl'].replace("\n", "<br>")
+    st.markdown(f'<div id="cl_view" class="doc-preview">{cl_clean}</div>', unsafe_allow_html=True)
+        

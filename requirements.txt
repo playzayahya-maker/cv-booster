@@ -1,2 +1,5 @@
 streamlit
 groq
+PyPDF2
+docx2txt
+html2pdf

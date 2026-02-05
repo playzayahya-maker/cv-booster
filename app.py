@@ -37,7 +37,7 @@ st.markdown("""
 with st.sidebar:
     st.markdown("<h2 style='color: #C53030;'>🇨🇦 Canada Resume Builder</h2>", unsafe_allow_html=True)
     st.write("---")
-    MY_API_KEY = st.text_input("🔑 Groq API Key", type="password", help="Enter your gsk_... key here")
+    MY_API_KEY = st.text_input("🔑 Groq API Key", type="password", help="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")
     st.info("💡 **Tip:** In Canada, don't include your photo, age, or marital status to avoid bias.")
 
 # 4. Inputs

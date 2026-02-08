@@ -3,118 +3,131 @@ from groq import Groq
 from fpdf import FPDF
 import time
 
-# --- UI Setup ---
-st.set_page_config(page_title="NEURAL ARCHITECT PRO", layout="wide")
+# --- 1. CONFIG & NEON DESIGN ---
+st.set_page_config(page_title="ELITE CV ARCHITECT", layout="wide")
 
 st.markdown("""
 <style>
-    .stApp { background-color: #020617; color: #f8fafc; }
-    .main-header { color: #22c55e; text-align: center; font-size: 35px; font-weight: 800; padding: 20px; }
+    .stApp { background-color: #050505; color: #ffffff; }
+    .main-header { color: #00FF9D; text-align: center; font-size: 40px; font-weight: 900; text-shadow: 0 0 20px #00FF9D44; }
     
-    /* Style d les Buttons d Toggle */
-    .toggle-container { display: flex; justify-content: center; gap: 20px; margin-bottom: 30px; }
-    .stButton>button { width: 200px; border-radius: 10px; font-weight: bold; transition: 0.3s; }
+    /* Neon Buttons Style */
+    div.stButton > button {
+        background-color: #0f172a; border: 2px solid #00FF9D; color: #00FF9D;
+        width: 100%; height: 60px; font-size: 18px; font-weight: bold; border-radius: 12px;
+        transition: 0.3s;
+    }
+    div.stButton > button:hover { background-color: #00FF9D; color: #050505; box-shadow: 0 0 20px #00FF9D; }
     
-    /* Paper Style Preview */
-    .preview-paper { background: white; color: #1e293b; padding: 50px; border-radius: 5px; font-family: 'Garamond', serif; min-height: 800px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); line-height: 1.6; margin-top: 30px; }
+    /* Region Style Selector */
+    .stSelectbox label { color: #00FF9D !important; font-weight: bold; }
+    
+    /* Paper Preview */
+    .paper-output { 
+        background-color: white; color: #1a1a1a; padding: 40px; 
+        border-radius: 5px; font-family: 'Garamond', serif; 
+        box-shadow: 0 0 30px rgba(0,0,0,0.5); line-height: 1.6;
+        margin-top: 20px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- PDF Engine ---
-def create_pdf(text):
+# --- 2. PDF GENERATOR ---
+def generate_pdf_bytes(text):
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Times", size=12)
-    clean_text = text.encode('latin-1', 'ignore').decode('latin-1')
-    pdf.multi_cell(0, 10, clean_text)
+    pdf.set_font("Arial", size=11)
+    # Clean text for Latin-1 (PDF Standard)
+    safe_text = text.encode('latin-1', 'ignore').decode('latin-1')
+    pdf.multi_cell(0, 8, safe_text)
     return pdf.output()
 
-# --- Sidebar API ---
+# --- 3. SIDEBAR (API & INFO) ---
 with st.sidebar:
-    st.markdown("### 🔐 SYSTEM ACCESS")
+    st.markdown("### 🔐 SECURITY")
     api_key = st.text_input("GROQ API KEY:", type="password")
     st.write("---")
-    st.info("Mode: Smart Toggle\nAuto-Parsing: Active")
+    st.markdown("### 🛠 SYSTEM")
+    st.caption("Engine: Llama-3.3-70B")
+    st.caption("Status: Neural Parsing Active")
 
-st.markdown("<div class='main-header'>NEURAL CV ARCHITECT PRO</div>", unsafe_allow_html=True)
+st.markdown("<h1 class='main-header'>NEURAL CV ARCHITECT PRO</h1>", unsafe_allow_html=True)
 
-# --- Smart Toggle Logic ---
-if 'input_mode' not in st.session_state:
-    st.session_state.input_mode = None
+# --- 4. STYLE & INPUT SELECTION ---
+col_style, col_mode = st.columns([1, 2])
 
-st.markdown("<h4 style='text-align:center;'>Khtar kifach bghiti t-7et profile dyalk:</h4>", unsafe_allow_html=True)
-col_btn1, col_btn2 = st.columns(2)
+with col_style:
+    st.markdown("### 🌍 REGION STYLE")
+    region = st.selectbox("Select Target Market:", ["CANADA (ATS Standard)", "USA (Corporate Style)", "EUROPE (Europass/Modern)"])
 
-with col_btn1:
-    if st.button("📁 UPLOAD CV (IMAGE/PDF)"):
-        st.session_state.input_mode = 'file'
+with col_mode:
+    st.markdown("### 📥 INPUT SOURCE")
+    input_choice = st.radio("Choose how to provide your data:", ["Paste Text (CV + Job)", "Upload File"], horizontal=True)
 
-with col_btn2:
-    if st.button("⌨️ PASTE RAW TEXT"):
-        st.session_state.input_mode = 'text'
+st.markdown("---")
 
-# --- Hidden Input Areas ---
-user_data = ""
+# Data Holder
+final_raw_data = ""
 
-if st.session_state.input_mode == 'file':
-    st.markdown("---")
-    # Hna t9der t-uploadi Image wlla PDF
-    uploaded_file = st.file_uploader("Uploadi l-CV l-9dim (Image/PDF/TXT):", type=['pdf', 'txt', 'png', 'jpg', 'jpeg'])
-    if uploaded_file:
-        # Ila image, khass OCR (hadi faza khera), walakin t9der t-readiha ka bytes
-        user_data = f"File Uploaded: {uploaded_file.name}"
-        st.success(f"✅ {uploaded_file.name} Ready for Scan")
+if input_choice == "Paste Text (CV + Job)":
+    final_raw_data = st.text_area("Paste everything (Your Experience & The Job Offer) here:", height=350)
+else:
+    uploaded_file = st.file_uploader("Upload your old CV (PDF/JPG/PNG):", type=['pdf', 'png', 'jpg', 'jpeg', 'txt'])
+    job_offer_text = st.text_area("Paste the Job Offer here:", height=200)
+    if uploaded_file and job_offer_text:
+        final_raw_data = f"USER CV: {uploaded_file.name}\nJOB OFFER: {job_offer_text}"
 
-elif st.session_state.input_mode == 'text':
-    st.markdown("---")
-    user_data = st.text_area("Paste CV Text + Job Description hna:", height=300, placeholder="Copy kolshi hna...")
-
-# --- Common Job Description Area (ila knti baghi t-khlliha dima bayna) ---
-# (Optionnel: L-Agent t-i-parsingi kolchi mn kadr wa7ed kif glti)
-
-# --- Execution ---
-if st.button("EXECUTE PRO SCAN ⚡", use_container_width=True):
+# --- 5. EXECUTION LOGIC ---
+if st.button("EXECUTE ARCHITECT SCAN ⚡"):
     if not api_key:
-        st.error("Missing API Key in Sidebar!")
-    elif not user_data:
-        st.warning("Please provide your data first.")
+        st.error("❌ Authentication Required: Enter API Key in the Sidebar.")
+    elif not final_raw_data:
+        st.warning("⚠️ Data Missing: Please provide your CV/Experience and the Job Offer.")
     else:
         try:
             client = Groq(api_key=api_key)
-            with st.status("🧠 Processing Data...", expanded=True) as status:
-                st.write("📡 Separating profile from job requirements...")
+            with st.status("🧠 Processing Neural Architecture...", expanded=True) as status:
+                st.write("📡 Detecting Job Title and ATS Keywords...")
                 
-                # Intelligent Prompt for parsing
+                # Pro Prompt
                 prompt = f"""
-                You are an Elite Recruiter. Analyze the provided input. 
-                Identify the Job Title and Location. 
-                Create an ATS-Optimized CV (STAR Method) and a professional Cover Letter.
+                You are a Master Executive Recruiter for the {region} market.
                 
                 INPUT DATA:
-                {user_data}
+                {final_raw_data}
                 
-                Formatting: Canada/USA professional standards.
+                YOUR TASK:
+                1. Split the data into 'User Experience' and 'Job Requirements'.
+                2. Create an Elite CV using STAR method.
+                3. Create a High-Conversion Cover Letter for the {region} market.
+                4. RULES: No photos/age if Canada/USA. Maximize keyword density.
                 """
                 
-                res = client.chat.completions.create(
+                completion = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=[{"role": "user", "content": prompt}],
                     temperature=0.2
                 )
-                st.session_state['final_out'] = res.choices[0].message.content
+                
+                st.session_state['result_text'] = completion.choices[0].message.content
                 status.update(label="✅ ARCHITECTURE COMPLETE", state="complete")
+                st.rerun() # Refresh bach i-ban l-output
         except Exception as e:
             st.error(f"Error: {e}")
 
-# --- Result Display ---
-if 'final_out' in st.session_state:
-    st.markdown("<div class='preview-paper'>" + st.session_state['final_out'] + "</div>", unsafe_allow_html=True)
+# --- 6. RESULTS & EXPORT ---
+if 'result_text' in st.session_state:
+    st.markdown("### 📄 GENERATED ATS PACKAGE")
+    st.markdown(f"<div class='paper-output'>{st.session_state['result_text']}</div>", unsafe_allow_html=True)
     
-    pdf_bytes = create_pdf(st.session_state['final_out'])
-    st.download_button(
-        label="📥 DOWNLOAD PDF PACKAGE",
-        data=pdf_bytes,
-        file_name="Elite_Package.pdf",
-        mime="application/pdf",
-        use_container_width=True
-    )
+    # Generate PDF only when needed
+    try:
+        pdf_data = generate_pdf_bytes(st.session_state['result_text'])
+        st.download_button(
+            label="📥 DOWNLOAD PDF PACKAGE",
+            data=pdf_data,
+            file_name=f"Elite_CV_{region.split()[0]}.pdf",
+            mime="application/pdf"
+        )
+    except Exception as pdf_err:
+        st.error("PDF Engine Error. Please copy the text manually.")

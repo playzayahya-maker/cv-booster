@@ -2,129 +2,98 @@ import streamlit as st
 from groq import Groq
 from fpdf import FPDF
 import pdfplumber
-import re
 
-# --- 1. CONFIGURATION & STYLING ---
-st.set_page_config(page_title="CV BOOSTER ELITE V25", layout="wide")
+# --- UI & Layout ---
+st.set_page_config(page_title="CV & Cover Letter Pro", layout="wide")
 
 st.markdown("""
 <style>
-    .stApp { background-color: #fcfaff; }
-    .main-header { color: #6d28d9; text-align: left; font-weight: 800; font-size: 30px; padding: 15px; border-bottom: 2px solid #e2e8f0; }
-    .preview-paper { background: white; padding: 35px; border-radius: 4px; border: 1px solid #ddd; font-family: 'Helvetica', sans-serif; min-height: 500px; color: #1a1a1a; line-height: 1.5; }
-    .stButton>button { background: #7c3aed; color: white; border-radius: 10px; font-weight: bold; height: 55px; width: 100%; border: none; }
+    .stApp { background-color: #f8fafc; }
+    .main-header { color: #6d28d9; font-weight: 800; font-size: 32px; margin-bottom: 20px; }
+    .card { background: white; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0; min-height: 450px; }
+    .stButton>button { background: #7c3aed; color: white; border-radius: 8px; font-weight: bold; height: 50px; width: 100%; border: none; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. ROBUST PDF ENGINE (UTF-8 + No Crash) ---
-class PDF(FPDF):
-    def header(self):
-        pass # Custom header if needed
-
-def generate_pdf_file(text, title, market):
+# --- Function for PDF (UTF-8) ---
+def build_pdf(content, title, market):
     pdf = FPDF()
     pdf.add_page()
-    # Header Style
     pdf.set_font("Helvetica", 'B', 16)
-    pdf.set_text_color(109, 40, 217) # Mauve
-    align = 'L' if market == "CANADA" else 'C'
-    pdf.cell(0, 10, title.upper(), ln=True, align=align)
+    pdf.set_text_color(109, 40, 217) # Mauve Style
+    pdf.cell(0, 10, title.upper(), ln=True, align='L' if market == "Canada" else 'C')
     pdf.line(10, 22, 200, 22)
     pdf.ln(10)
-    # Content Style
     pdf.set_font("Helvetica", size=10)
-    pdf.set_text_color(0, 0, 0)
-    # FPDF2 handles UTF-8 automatically
-    pdf.multi_cell(0, 7, text)
+    pdf.set_text_color(30, 30, 30)
+    pdf.multi_cell(0, 7, content)
     return pdf.output()
 
-# --- 3. EXTRACTION ENGINE ---
-def extract_pdf_text(file):
-    text = ""
+# --- Extraction Logic ---
+def get_pdf_text(file):
     with pdfplumber.open(file) as pdf:
-        for page in pdf.pages:
-            extracted = page.extract_text()
-            if extracted:
-                text += extracted + "\n"
-    return text
+        return "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
 
-st.markdown("<div class='main-header'>🚀 CV BOOSTER <span style='color:#94a3b8; font-size:14px;'>FINAL V25</span></div>", unsafe_allow_html=True)
+st.markdown("<div class='main-header'>🚀 Pro Career Suite V27</div>", unsafe_allow_html=True)
 
-# --- 4. SIDEBAR ---
+# --- Inputs ---
 with st.sidebar:
-    st.markdown("### 🔑 ACCESS & SETTINGS")
-    api_key = st.text_input("Groq API Key:", type="password")
-    market = st.selectbox("Target Country:", ["Canada", "Germany", "France", "Spain", "Italy", "UK"])
-    st.write("---")
-    st.info("Logic: STAR Method + No Skill Levels + UTF-8 Safe.")
+    st.header("⚙️ Settings")
+    key = st.text_input("Groq API Key:", type="password")
+    dest = st.selectbox("Market:", ["Canada", "Germany", "France", "UK", "Spain", "Italy"])
 
-# --- 5. INPUT TABS (As per Screenshot_230) ---
-tab_file, tab_text = st.tabs(["📤 Subir Archivo", "✍️ Pegar Texto"])
-final_input_text = ""
+# UI Tabs for Input
+t1, t2 = st.tabs(["📤 Upload PDF CV", "✍️ Paste Content"])
+raw_text = ""
+with t1:
+    f = st.file_uploader("Upload current CV", type=['pdf'], label_visibility="collapsed")
+    if f: raw_text = get_pdf_text(f)
+with t2:
+    txt = st.text_area("Paste experience here...", height=200, label_visibility="collapsed")
+    if txt: raw_text += "\n" + txt
 
-with tab_file:
-    up_file = st.file_uploader("Upload PDF CV", type=['pdf'], label_visibility="collapsed")
-    if up_file:
-        final_input_text = extract_pdf_text(up_file)
-        st.success("PDF Content Extracted.")
-
-with tab_text:
-    user_text = st.text_area("Experience/Skills:", height=250, placeholder="Paste details here...", label_visibility="collapsed")
-    if user_text:
-        final_input_text += "\n" + user_text
-
-# --- 6. PERFORMANCE EXECUTION ---
-if st.button("ARCHITECT CV & COVER LETTER →", use_container_width=True):
-    if not api_key:
-        st.error("API Key is missing!")
-    elif not final_input_text:
-        st.warning("Please provide CV data.")
+# --- AI Logic ---
+if st.button("GENERATE CV + COVER LETTER"):
+    if not key or not raw_text:
+        st.error("Missing Data/Key.")
     else:
         try:
-            client = Groq(api_key=api_key)
-            with st.status(f"🧠 Optimizing for {market}..."):
-                
-                system_prompt = f"""
-                You are a Senior Career Architect in {market}.
-                RULES:
-                1. Include Phone (+212) and Location (Casablanca, Morocco).
-                2. Skills: Simple list (SQL, Power BI, ETL). NO levels like 'Advanced'.
-                3. Experience: Use STAR method (Action + Task + Result).
-                4. Languages: If Europe, use CEFR (A1-C1). If Canada, focus on 'Mots-clés'.
-                5. Output: Strictly separate CV and Cover inside tags.
-                """
-                
-                user_msg = f"Data: {final_input_text}. Return strictly in: [CV_START]...[CV_END] and [COVER_START]...[COVER_END]"
-                
-                res = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_msg}],
-                    temperature=0.1
-                )
-                
-                raw = res.choices[0].message.content
-                if "[CV_START]" in raw and "[COVER_START]" in raw:
-                    st.session_state['cv_res'] = raw.split("[CV_START]")[1].split("[CV_END]")[0].strip()
-                    st.session_state['cover_res'] = raw.split("[COVER_START]")[1].split("[COVER_END]")[0].strip()
-                else:
-                    st.error("Format Error. Please try again.")
-        except Exception as e:
-            st.error(f"Error: {e}")
+            client = Groq(api_key=key)
+            prompt = f"""
+            Role: Expert Career Coach in {dest}. 
+            Output: Two distinct documents in [CV_START][CV_END] and [COVER_START][COVER_END].
+            
+            CV Rules: 
+            - Use STAR method. No 'Expert' levels.
+            - Format: Professional, +212 Phone, Casablanca Location.
+            
+            Cover Letter Rules:
+            - Professional header. Tailored to {dest} business culture.
+            - Focus on results and achievements.
+            """
+            res = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt + "\nData: " + raw_text}],
+                temperature=0.1
+            )
+            data = res.choices[0].message.content
+            st.session_state.final_cv = data.split("[CV_START]")[1].split("[CV_END]")[0].strip()
+            st.session_state.final_cover = data.split("[COVER_START]")[1].split("[COVER_END]")[0].strip()
+        except: st.error("Parsing Error. Try again.")
 
-# --- 7. SEPARATE DISPLAYS & DOWNLOADS (Fixing Screenshot_288) ---
-if 'cv_res' in st.session_state:
+# --- Results (Separation View) ---
+if 'final_cv' in st.session_state:
     st.write("---")
-    col1, col2 = st.columns(2)
+    col_cv, col_cover = st.columns(2)
     
-    with col1:
-        st.markdown(f"#### 📄 CV OPTIMIZADO ({market})")
-        st.markdown(f"<div class='preview-paper'>{st.session_state['cv_res']}</div>", unsafe_allow_html=True)
-        # Fix: Generate PDF bytes directly in the download button logic
-        cv_pdf = generate_pdf_file(st.session_state['cv_res'], "Curriculum Vitae", market.upper())
-        st.download_button("📥 DOWNLOAD CV (PDF)", data=cv_pdf, file_name=f"CV_{market}.pdf", mime="application/pdf")
+    with col_cv:
+        st.subheader("📄 Professional CV")
+        st.markdown(f"<div class='card'>{st.session_state.final_cv}</div>", unsafe_allow_html=True)
+        pdf_cv = build_pdf(st.session_state.final_cv, "Curriculum Vitae", dest)
+        st.download_button("📥 Download CV (PDF)", pdf_cv, "CV_Pro.pdf", "application/pdf")
 
-    with col2:
-        st.markdown("#### ✉️ CARTA DE PRESENTACIÓN")
-        st.markdown(f"<div class='preview-paper'>{st.session_state['cover_res']}</div>", unsafe_allow_html=True)
-        cover_pdf = generate_pdf_file(st.session_state['cover_res'], "Cover Letter", market.upper())
-        st.download_button("📥 DOWNLOAD COVER (PDF)", data=cover_pdf, file_name=f"Cover_{market}.pdf", mime="application/pdf")
+    with col_cover:
+        st.subheader("✉️ Cover Letter")
+        st.markdown(f"<div class='card'>{st.session_state.final_cover}</div>", unsafe_allow_html=True)
+        pdf_cover = build_pdf(st.session_state.final_cover, "Cover Letter", dest)
+        st.download_button("📥 Download Letter (PDF)", pdf_cover, "Cover_Letter.pdf", "application/pdf")

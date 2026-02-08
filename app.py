@@ -3,89 +3,93 @@ from groq import Groq
 from fpdf import FPDF
 import re
 
-# --- CONFIG & DESIGN (Colors: Mauve, White, Indigo) ---
-st.set_page_config(page_title="CV BOOSTER PRO", layout="wide")
+# --- UI PRO DESIGN (Mauve & Pro White) ---
+st.set_page_config(page_title="CV BOOSTER ELITE V19", layout="wide")
 
 st.markdown("""
 <style>
-    .stApp { background-color: #fcfaff; color: #334155; }
-    .main-header { color: #6d28d9; text-align: center; font-weight: 800; font-size: 32px; margin-bottom: 20px; }
-    .stTabs [data-baseweb="tab-list"] { background-color: #ffffff; border-radius: 10px; padding: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-    .stTabs [data-baseweb="tab"] { font-weight: 600; color: #6b7280; }
-    .stTabs [aria-selected="true"] { color: #6d28d9 !important; border-bottom-color: #6d28d9 !important; }
-    .preview-paper { background: white; padding: 40px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px rgba(0,0,0,0.05); color: #1e293b; font-family: 'Times', serif; }
-    .stButton>button { background: #7c3aed; color: white; border-radius: 10px; font-weight: bold; border: none; height: 55px; font-size: 18px; }
-    .stButton>button:hover { background: #6d28d9; box-shadow: 0 0 15px rgba(124, 58, 237, 0.4); }
+    .stApp { background-color: #fcfaff; }
+    .main-header { color: #6d28d9; text-align: center; font-weight: 800; font-size: 32px; padding: 15px; border-bottom: 2px solid #e2e8f0; }
+    .card { background: white; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; }
+    .preview-paper { background: white; padding: 35px; border-radius: 4px; border: 1px solid #ccc; font-family: 'Helvetica', sans-serif; min-height: 600px; line-height: 1.6; color: #1a1a1a; }
+    .stButton>button { background: #7c3aed; color: white; border-radius: 10px; font-weight: bold; height: 55px; width: 100%; border: none; font-size: 18px; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- PDF GENERATOR (Dual Engine) ---
+# --- ROBUST PDF ENGINE (Fixing Screenshot_288 Error) ---
 def create_pdf(text, title):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Times", 'B', 16)
-    pdf.cell(0, 10, title, ln=True, align='C')
-    pdf.ln(10)
-    pdf.set_font("Times", size=11)
-    clean_text = re.sub(r'[^\x00-\x7F]+', ' ', text)
-    pdf.multi_cell(0, 8, clean_text)
-    return pdf.output(dest='S').encode('latin-1')
+    try:
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", 'B', 16)
+        pdf.set_text_color(109, 40, 217) # Mauve Elite
+        pdf.cell(0, 15, title.upper(), ln=True, align='C')
+        pdf.set_draw_color(109, 40, 217)
+        pdf.line(10, 25, 200, 25) # Horizontal line for pro look
+        pdf.ln(10)
+        
+        pdf.set_font("Arial", size=11)
+        pdf.set_text_color(0, 0, 0)
+        # Clean text from special characters to prevent encoding errors
+        clean_text = re.sub(r'[^\x00-\x7F]+', ' ', text)
+        pdf.multi_cell(0, 8, clean_text)
+        
+        return pdf.output(dest='S').encode('latin-1')
+    except Exception as e:
+        st.error(f"PDF Engine Error: {e}")
+        return None
 
-st.markdown("<div class='main-header'>CV BOOSTER: SMART OPTIMIZER</div>", unsafe_allow_html=True)
+st.markdown("<div class='main-header'>CV BOOSTER AI: PLATINUM ARCHITECT</div>", unsafe_allow_html=True)
 
-# --- SIDEBAR: API KEY MANUAL & STYLE ---
+# --- SIDEBAR: MANUAL CONFIG ---
 with st.sidebar:
-    st.markdown("### 🔑 CONFIGURATION")
-    # API Key Manual Input
-    api_key_input = st.text_input("Ingresa tu Groq API Key:", type="password", help="Dkhel l-Key dyalk hna bach t-khdem l-IA")
-    
+    st.markdown("### 🔑 ACCESS")
+    api_key_input = st.text_input("Ingresa tu Groq API Key:", type="password")
     st.write("---")
-    st.markdown("### 🌍 SELECCIONAR MERCADO")
-    market = st.radio("Destino:", ["🇨🇦 CANADA (Strict ATS)", "🇪🇺 EUROPE (Standard)"])
-    
-    st.write("---")
-    st.caption("Protocolo activo: STAR Achievement & Anti-Bias Filtering")
+    market = st.radio("Standard Protocol:", ["🇨🇦 CANADA (Strict ATS)", "🇪🇺 EUROPE / MAROC (Professional)"])
+    st.info("Logic: STAR Method + Impact-First Verbs")
 
-# --- MAIN INPUT TABS (The design you circled) ---
-# Separated into 'Subir Archivo' and 'Pegar Texto'
-tab1, tab2 = st.tabs(["📤 Subir Archivo", "✍️ Pegar Texto"])
+# --- DUAL TABS (As per your Screenshot_230) ---
+tab_file, tab_text = st.tabs(["📤 Subir Archivo (Old CV)", "✍️ Pegar Texto (Job/Info)"])
 
-with tab1:
-    st.markdown("#### Arrastra tu CV antiguo aquí")
-    uploaded_file = st.file_uploader("Soportado: PDF, JPG, PNG", type=['pdf', 'jpg', 'png', 'jpeg'], label_visibility="collapsed")
-    if uploaded_file:
-        st.success(f"Archivo '{uploaded_file.name}' cargado con éxito.")
+with tab_file:
+    uploaded_file = st.file_uploader("Arrastra tu CV antiguo (PDF/JPG)", type=['pdf', 'jpg', 'png', 'jpeg'], label_visibility="collapsed")
 
-with tab2:
-    st.markdown("#### Pega el contenido o la descripción del trabajo")
-    user_input = st.text_area("Contenido del CV o Job Description:", height=250, placeholder="Escribe o pega aquí...", label_visibility="collapsed")
+with tab_text:
+    user_input = st.text_area("Pega tu información profesional aquí:", height=250, placeholder="Dkhel hna l-khidma dyalk o l-m3loumat...")
 
-# --- PROCESS BUTTON ---
-if st.button("GENERAR CV OPTIMIZADO →", use_container_width=True):
+# --- PERFORMANCE LOGIC ---
+if st.button("GENERAR CV ELITE →", use_container_width=True):
     if not api_key_input:
-        st.error("❌ Error: Darouri t-dkhel l-API Key f l-sidebar bach n-bdaw.")
+        st.error("❌ Darouri t-dkhel l-API Key!")
     elif not user_input and not uploaded_file:
-        st.warning("⚠️ Warning: Lo7 chi info f l-tabs sghiba.")
+        st.warning("⚠️ Lo7 chi m3loumat bach n-khdem.")
     else:
         try:
             client = Groq(api_key=api_key_input)
-            with st.status(f"🧠 Optimizando para {market}...", expanded=True):
+            with st.status("🚀 Engineering Professional Profile...", expanded=True):
                 
+                # High-Performance Prompting
                 prompt = f"""
-                You are a career consultant for {market}. 
-                Data: {user_input if user_input else 'Data extracted from file'}
+                Act as an Elite Career Architect for {market}. 
+                The user provided: {user_input if user_input else 'Data from attached file'}.
                 
-                Strict Rules:
-                - If CANADA: Format as seen in professional Canadian resumes (No photo, Reverse Chronological, STAR method bullets). 
-                - If EUROPE: Focus on Core Competencies grid, Skills Matrix, and Languages. 
-                - Both: Write a professional Cover Letter.
+                YOUR MISSION:
+                1. CV: Create a high-performance CV. Every bullet point MUST follow the STAR method (Situation, Task, Action, Result). 
+                2. Impact: Use Power Verbs (Orchestrated, Spearheaded, Optimized). Focus on MONEY saved or TIME gained.
+                3. Structure: 
+                   - Professional Summary (High-impact)
+                   - Core Competencies (Expertise Grid)
+                   - Professional Experience (Action-Result Bullets)
+                   - Education & Technical Stack
+                4. Cover Letter: A persuasive, emotional, and professional letter tailored to the background.
                 
-                Format Output as:
+                Format Output:
                 [CV_START]
-                (CV Content)
+                (Professional CV content)
                 [CV_END]
                 [COVER_START]
-                (Cover Letter Content)
+                (Professional Cover Letter content)
                 [COVER_END]
                 """
                 
@@ -96,25 +100,27 @@ if st.button("GENERAR CV OPTIMIZADO →", use_container_width=True):
                 )
                 
                 full_resp = res.choices[0].message.content
-                st.session_state['cv_final'] = full_resp.split("[CV_START]")[1].split("[CV_END]")[0].strip()
-                st.session_state['cover_final'] = full_resp.split("[COVER_START]")[1].split("[COVER_END]")[0].strip()
+                st.session_state['cv_p'] = full_resp.split("[CV_START]")[1].split("[CV_END]")[0].strip()
+                st.session_state['cover_p'] = full_resp.split("[COVER_START]")[1].split("[COVER_END]")[0].strip()
                 st.rerun()
         except Exception as e:
-            st.error(f"Engine Error: {e}")
+            st.error(f"Engine Failure: {e}")
 
-# --- RESULTS & SEPARATE DOWNLOADS ---
-if 'cv_final' in st.session_state:
+# --- OUTPUT DISPLAY & DOWNLOADS ---
+if 'cv_p' in st.session_state:
     st.write("---")
     col_cv, col_cover = st.columns(2)
     
     with col_cv:
-        st.markdown("### 📄 CV OPTIMIZADO")
-        st.markdown(f"<div class='preview-paper'>{st.session_state['cv_final']}</div>", unsafe_allow_html=True)
-        cv_pdf = create_pdf(st.session_state['cv_final'], "CURRICULUM VITAE")
-        st.download_button("📥 Download CV (PDF)", data=cv_pdf, file_name="CV_Optimized.pdf", mime="application/pdf", use_container_width=True)
+        st.markdown("### 📄 CV OPTIMIZADO (Elite)")
+        st.markdown(f"<div class='preview-paper'>{st.session_state['cv_p']}</div>", unsafe_allow_html=True)
+        cv_bytes = create_pdf(st.session_state['cv_p'], "Curriculum Vitae")
+        if cv_bytes:
+            st.download_button("📥 DOWNLOAD CV (PDF)", data=cv_bytes, file_name="Elite_CV.pdf", mime="application/pdf")
 
     with col_cover:
         st.markdown("### ✉️ CARTA DE PRESENTACIÓN")
-        st.markdown(f"<div class='preview-paper'>{st.session_state['cover_final']}</div>", unsafe_allow_html=True)
-        cover_pdf = create_pdf(st.session_state['cover_final'], "COVER LETTER")
-        st.download_button("📥 Download Cover Letter (PDF)", data=cover_pdf, file_name="Cover_Letter.pdf", mime="application/pdf", use_container_width=True)
+        st.markdown(f"<div class='preview-paper'>{st.session_state['cover_p']}</div>", unsafe_allow_html=True)
+        cover_bytes = create_pdf(st.session_state['cover_p'], "Cover Letter")
+        if cover_bytes:
+            st.download_button("📥 DOWNLOAD COVER (PDF)", data=cover_bytes, file_name="Elite_CoverLetter.pdf", mime="application/pdf")

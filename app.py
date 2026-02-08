@@ -2,103 +2,108 @@ import streamlit as st
 from groq import Groq
 import pdfplumber
 from fpdf import FPDF
-import io
 
-# --- 1. CONFIGURATION B7AL L-PHOTO ---
+# --- CONFIGURATION VISUELLE ---
 st.set_page_config(page_title="CV Booster Pro", layout="wide")
-
 st.markdown("""
 <style>
     .stApp { background-color: #f4f7fe; }
-    .main-header { color: #4f46e5; font-weight: 800; font-size: 28px; margin-bottom: 20px; }
-    /* Style dial s-sora */
-    .preview-card { background: white; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); font-family: 'Helvetica'; color: #1e293b; }
-    .stButton>button { background: #4f46e5; color: white; border-radius: 8px; font-weight: bold; height: 50px; border: none; }
+    .preview-box { background: white; padding: 25px; border-radius: 10px; border-top: 5px solid #6d28d9; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); font-family: 'Segoe UI'; }
+    .stButton>button { background: linear-gradient(90deg, #6d28d9 0%, #4f46e5 100%); color: white; font-weight: bold; border: none; height: 50px; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. FIXED PDF ENGINE (No more StreamlitAPIException) ---
-def generate_safe_pdf(text, title, market):
-    pdf = FPDF()
+# --- ENGINE DIAL L-ALWAN O FORMATION ---
+class StyledPDF(FPDF):
+    def header_styled(self, name, title, contact_info):
+        self.set_fill_color(109, 40, 217) # Mauve
+        self.rect(0, 0, 210, 40, 'F')
+        self.set_text_color(255, 255, 255)
+        self.set_font("Arial", 'B', 22)
+        self.set_xy(10, 10)
+        self.cell(0, 10, name.upper(), ln=True)
+        self.set_font("Arial", '', 12)
+        self.cell(0, 10, title, ln=True)
+        self.set_font("Arial", '', 9)
+        self.cell(0, 5, contact_info, ln=True)
+        self.ln(15)
+
+    def section_title(self, label):
+        self.set_font("Arial", 'B', 12)
+        self.set_text_color(109, 40, 217)
+        self.cell(0, 10, label.upper(), ln=True)
+        self.line(10, self.get_y(), 200, self.get_y())
+        self.ln(4)
+
+def generate_pro_pdf(text, type_doc, market):
+    pdf = StyledPDF()
     pdf.add_page()
-    # Header Style b7al Screenshot 233
-    pdf.set_font("Helvetica", 'B', 16)
-    pdf.set_text_color(79, 70, 229) 
-    pdf.cell(0, 10, title.upper(), ln=True, align='L' if market == "Canada" else 'C')
-    pdf.line(10, 22, 200, 22)
-    pdf.ln(10)
     
-    pdf.set_font("Helvetica", size=10)
-    pdf.set_text_color(30, 41, 59)
-    # Fix dial encoding bach may-crachich
-    safe_text = text.encode('latin-1', 'ignore').decode('latin-1')
-    pdf.multi_cell(0, 7, safe_text)
+    # Extraction dyal s-smiya o title (Simplified for test)
+    lines = text.split('\n')
+    name = lines[0] if len(lines) > 0 else "Full Name"
+    contact = "Casablanca, Morocco | +212 600-000000 | email@example.com"
     
-    # OUTPUT AS BYTES (Fix dial Screenshot 291)
+    if type_doc == "CV":
+        pdf.header_styled(name, "Professional Profile", contact)
+        pdf.set_text_color(40, 40, 40)
+        pdf.set_font("Arial", size=10)
+        # Hna n-formatiw l-body (Simple logic for demo)
+        safe_text = text.encode('latin-1', 'ignore').decode('latin-1')
+        pdf.multi_cell(0, 6, safe_text)
+    else:
+        # Cover Letter style
+        pdf.header_styled(name, "Cover Letter", contact)
+        pdf.set_text_color(40, 40, 40)
+        pdf.set_font("Arial", size=11)
+        pdf.ln(10)
+        safe_text = text.encode('latin-1', 'ignore').decode('latin-1')
+        pdf.multi_cell(0, 7, safe_text)
+        
     return bytes(pdf.output())
 
-# --- 3. UI LAYOUT B7AL SCREENSHOT 230 ---
-st.markdown("<div class='main-header'>📑 CV Booster Pro</div>", unsafe_allow_html=True)
+# --- INTERFACE ---
+st.title("🚀 CV & Cover Letter - High Professional")
 
 with st.sidebar:
-    st.header("⚙️ Configuration")
-    api_key = st.text_input("Groq API Key:", type="password")
-    market = st.selectbox("Target Market:", ["Canada", "France", "Germany", "UK", "Spain"])
-    st.write("---")
-    st.info("Protocol: ATS-Friendly + STAR Achievements.")
+    key = st.text_input("Groq API Key:", type="password")
+    dest = st.selectbox("Market:", ["Canada", "France", "Germany"])
 
-# Tabs b7al s-tsora
-tab_upload, tab_paste = st.tabs(["📤 Subir Archivo", "✍️ Pegar Texto"])
-input_text = ""
+# Inputs
+t1, t2 = st.tabs(["📤 Subir Archivo", "✍️ Pegar Texto"])
+raw_input = ""
+with t1:
+    f = st.file_uploader("Upload PDF", type=['pdf'], label_visibility="collapsed")
+    if f:
+        with pdfplumber.open(f) as p:
+            raw_input = "\n".join([page.extract_text() for page in p.pages if page.extract_text()])
+with t2:
+    txt = st.text_area("Paste here", height=200, label_visibility="collapsed")
+    if txt: raw_input = txt
 
-with tab_upload:
-    up_file = st.file_uploader("Upload CV (PDF)", type=['pdf'], label_visibility="collapsed")
-    if up_file:
-        with pdfplumber.open(up_file) as pdf:
-            input_text = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
+if st.button("GENERATE PRO DOCUMENTS"):
+    if key and raw_input:
+        client = Groq(api_key=key)
+        prompt = f"Create a professional CV and a matching Cover Letter for {dest}. Split with [CV] and [LETTER]. Use STAR method."
+        res = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt + "\n" + raw_input}]
+        )
+        content = res.choices[0].message.content
+        st.session_state.cv_p = content.split("[CV]")[1].split("[LETTER]")[0].strip()
+        st.session_state.lt_p = content.split("[LETTER]")[1].strip()
 
-with tab_paste:
-    paste_text = st.text_area("Pega el contenido de tu CV aquí:", height=250, label_visibility="collapsed")
-    if paste_text:
-        input_text = paste_text
-
-# --- 4. GENERATION LOGIC ---
-if st.button("GENERAR CV Y COVER LETTER OPTIMIZADO →"):
-    if not api_key or not input_text:
-        st.error("Please provide API Key and Data.")
-    else:
-        try:
-            client = Groq(api_key=api_key)
-            # Prompt m-fignoli bach i-3ti CV o Cover Letter m-separeryn
-            system_msg = f"Expert Recruiter for {market}. Create a Professional CV and a tailored Cover Letter. Use [CV_DOC] and [LETTER_DOC] as separators."
-            
-            res = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[{"role": "user", "content": f"{system_msg}\n\nData: {input_text}"}],
-                temperature=0.2
-            )
-            raw_res = res.choices[0].message.content
-            
-            # Parsing
-            st.session_state.cv_final = raw_res.split("[CV_DOC]")[1].split("[LETTER_DOC]")[0].strip()
-            st.session_state.letter_final = raw_res.split("[LETTER_DOC]")[1].strip()
-        except Exception as e:
-            st.error(f"AI Error: {e}")
-
-# --- 5. RESULTS DISPLAY (Separation Mode) ---
-if 'cv_final' in st.session_state:
+# --- DISPLAY ---
+if 'cv_p' in st.session_state:
     st.divider()
-    col_cv, col_letter = st.columns(2)
-    
-    with col_cv:
-        st.subheader("📄 Curriculum Vitae")
-        st.markdown(f"<div class='preview-card'>{st.session_state.cv_final}</div>", unsafe_allow_html=True)
-        cv_pdf = generate_safe_pdf(st.session_state.cv_final, "Curriculum Vitae", market)
-        st.download_button("📥 Download CV", data=cv_pdf, file_name=f"CV_{market}.pdf", mime="application/pdf")
-
-    with col_letter:
-        # L-jiha d l-cover li kant khassa
-        st.subheader("✉️ Carta de Presentación")
-        st.markdown(f"<div class='preview-card'>{st.session_state.letter_final}</div>", unsafe_allow_html=True)
-        letter_pdf = generate_safe_pdf(st.session_state.letter_final, "Cover Letter", market)
-        st.download_button("📥 Download Letter", data=letter_pdf, file_name=f"Cover_{market}.pdf", mime="application/pdf")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.subheader("📄 Professional CV")
+        st.markdown(f"<div class='preview-box'>{st.session_state.cv_p}</div>", unsafe_allow_html=True)
+        cv_b = generate_pro_pdf(st.session_state.cv_p, "CV", dest)
+        st.download_button("📥 Download CV", cv_b, "CV_Pro.pdf")
+    with c2:
+        st.subheader("✉️ Cover Letter")
+        st.markdown(f"<div class='preview-box'>{st.session_state.lt_p}</div>", unsafe_allow_html=True)
+        lt_b = generate_pro_pdf(st.session_state.lt_p, "LETTER", dest)
+        st.download_button("📥 Download Letter", lt_b, "Letter_Pro.pdf")

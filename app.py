@@ -1,134 +1,105 @@
 import streamlit as st
 from groq import Groq
-import streamlit.components.v1 as components
-from PyPDF2 import PdfReader
-import docx2txt
+from fpdf import FPDF
+import time
 
-# 1. Page Config
-st.set_page_config(page_title="Global Career Pro", page_icon="💼", layout="wide")
+# --- UI SETUP ---
+st.set_page_config(page_title="AI CV ARCHITECT PRO", layout="wide")
 
-# 2. 🔑 Hardcoded API Key (Blast API Key hna nichan)
-# Ghir bedel had l-khit b l-key dyalk l-real o 7mih f l-code
-MY_GROQ_KEY = "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"
-
-# 3. CSS Style (Executive Look)
 st.markdown("""
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <style>
-    .stApp { background-color: #F8F9FA; }
-    .doc-preview {
-        background-color: white; padding: 50px; margin: auto;
-        color: #000 !important; font-family: 'Times New Roman', serif;
-        line-height: 1.6; border: 1px solid #DDD; max-width: 800px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-    .stButton>button { width: 100%; border-radius: 6px; font-weight: bold; background-color: #1A365D; color: white; height: 3.2em; }
-    </style>
-    """, unsafe_allow_html=True)
+<style>
+    .stApp { background-color: #050505; color: #fff; }
+    .main-header { color: #00ff9d; text-align: center; font-family: 'Space Mono', monospace; font-size: 30px; }
+    .cv-preview { background: #111; border: 1px solid #222; padding: 20px; border-radius: 10px; font-family: 'serif'; color: #333; background-color: white; min-height: 400px; }
+    .status-badge { background: #00ff9d22; color: #00ff9d; padding: 5px 12px; border-radius: 15px; border: 1px solid #00ff9d; font-size: 12px; }
+</style>
+""", unsafe_allow_html=True)
 
-def extract_text(file):
-    try:
-        if file.type == "application/pdf":
-            reader = PdfReader(file)
-            return " ".join([p.extract_text() for p in reader.pages if p.extract_text()])
-        return docx2txt.process(file)
-    except: return ""
+# --- PDF GENERATOR FUNCTION ---
+def create_pdf(text):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    # Cleaning text for PDF (fpdf2 likes simple latin-1)
+    clean_text = text.encode('latin-1', 'ignore').decode('latin-1')
+    pdf.multi_cell(0, 10, clean_text)
+    return pdf.output()
 
-# 4. Sidebar
+# --- SIDEBAR (API MANUAL) ---
 with st.sidebar:
-    st.title("🌍 Market Selector")
-    market = st.selectbox("Select Target Region", ["Canada (Achievement/STAR)", "Europe (Visa/Context)"])
-    st.divider()
-    st.success("App Ready for Personal Use ✅")
+    st.markdown("### 🔐 ACCESS CONTROL")
+    api_key_input = st.text_input("ENTER GROQ API KEY:", type="password") #
+    st.write("---")
+    st.markdown("### 🛠 SYSTEM LOGS")
+    st.info("Agent: CV-Optimizer-V4\nModel: Llama-3.3-70B")
 
-# 5. Interface
-st.title("CV & Cover Letter Pro Optimizer")
-c1, c2 = st.columns([1.2, 1], gap="large")
+# --- MAIN INTERFACE ---
+st.markdown("<h1 class='main-header'>AI CV ARCHITECT PRO</h1>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center;'><span class='status-badge'>PDF EXPORT ENABLED</span></div><br>", unsafe_allow_html=True)
 
-with c1:
-    st.subheader("📤 Source Materials")
-    up_file = st.file_uploader("Upload CV (PDF/DOCX)", type=["pdf", "docx"])
-    manual_text = st.text_area("Or Paste CV Content:", height=250)
-    input_text = extract_text(up_file) if up_file else manual_text
+col1, col2 = st.columns(2)
 
-with c2:
-    st.subheader("🎯 Personal & Target Info")
-    job_target = st.text_input("Target Job Title", value="Digital Marketing Specialist")
-    citizenship = st.text_input("Citizenship", placeholder="e.g. Moroccan")
-    visa_status = st.text_input("Work Permit Status", placeholder="e.g. Sponsorship Needed")
-    
-    col_l1, col_l2 = st.columns(2)
-    with col_l1:
-        eng = st.selectbox("English", ["Full Professional", "Bilingual", "Native"])
-    with col_l2:
-        fr = st.selectbox("French", ["Professional Working", "Full Professional", "Native"])
-    
-    certs = st.text_input("Certifications", placeholder="Google, Meta, etc.")
-    generate_btn = st.button("🚀 GENERATE FULL CAREER PACKAGE")
+with col1:
+    st.markdown("### 📁 UPLOAD PROFILE")
+    uploaded_file = st.file_uploader("Upload CV (PDF/TXT)", type=['pdf', 'txt']) #
+    target_job = st.text_input("🎯 TARGET JOB:", placeholder="e.g. Mechanical Engineer")
+    style = st.selectbox("🌍 REGION STYLE:", ["USA (ATS)", "Canada", "Europe"])
 
-# 6. AI Engine
-if generate_btn:
-    if not input_text:
-        st.warning("Please provide your CV content.")
-    elif MY_GROQ_KEY == "ADD_YOUR_GROQ_API_KEY_HERE":
-        st.error("⚠️ Nta nssiti ma-bedeltich l-API Key wast l-code!")
+with col2:
+    st.markdown("### 📝 JOB DESCRIPTION")
+    job_desc = st.text_area("Paste the job offer details here:", height=215)
+
+# --- LOGIC ---
+if st.button("GENERATE PRO CV ⚡"):
+    if not api_key_input:
+        st.error("Missing API Key. Check Sidebar.")
+    elif not uploaded_file or not job_desc:
+        st.warning("Please provide both CV and Job Description.")
     else:
         try:
-            client = Groq(api_key=MY_GROQ_KEY)
-            with st.spinner(f"Engineering for {market}..."):
-                is_europe = "Europe" in market
-                rules = f"""
-                - HEADER: Include Citizenship: {citizenship} and Work Permit: {visa_status}.
-                - SUMMARY: Results-driven, no emotional fluff.
-                - EXPERIENCE: {'Add Industry Context (e.g. Fintech) for each company.' if is_europe else 'Strictly use STAR method & Annualized metrics.'}
-                - SKILLS: Add Adaptability, Teamwork, Intercultural Communication.
-                - LANGUAGES: English ({eng}), French ({fr}).
-                - CERTIFICATIONS: Include {certs}.
+            client = Groq(api_key=api_key_input)
+            with st.status("🧬 Architecting your new CV...", expanded=True) as status:
+                st.write("📡 Analyzing ATS keywords...")
+                time.sleep(1)
+                
+                # Performance optimized prompt
+                prompt = f"""
+                Create a professional CV for the role of {target_job} based on this data:
+                Profile Info: {uploaded_file.name}
+                Job Requirements: {job_desc}
+                Style: {style}
+                
+                Instructions:
+                - Use impact verbs.
+                - Quantify achievements.
+                - Format clearly for ATS.
+                Return ONLY the CV content.
                 """
-
-                # CV Generation
-                cv_res = client.chat.completions.create(
+                
+                res = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
-                    messages=[{"role": "user", "content": f"Rewrite CV for {job_target} in {market}. Rules: {rules}. Data: {input_text}"}]
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.2 # Maximum Accuracy
                 )
-                st.session_state['cv_final'] = cv_res.choices[0].message.content
-
-                # Letter Generation
-                cl_res = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=[{"role": "user", "content": f"Write a professional Cover Letter for {job_target} for {market} based on: {input_text}."}]
-                )
-                st.session_state['cl_final'] = cl_res.choices[0].message.content
-                st.balloons()
+                st.session_state['final_cv'] = res.choices[0].message.content
+                status.update(label="✅ GENERATION COMPLETE", state="complete")
         except Exception as e:
             st.error(f"Error: {e}")
 
-# 7. Download Component (Universal Fix)
-def pdf_button(area_id, filename):
-    components.html(f"""
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-        <button onclick="dl()" style="width:100%; height:45px; background-color:#27ae60; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">
-            📥 Download {filename}
-        </button>
-        <script>
-        function dl() {{
-            const el = window.parent.document.getElementById('{area_id}');
-            html2pdf().from(el).set({{ margin: 10, filename: '{filename}', html2canvas: {{ scale: 2 }}, jsPDF: {{ format: 'a4' }} }}).save();
-        }}
-        </script>""", height=60)
-
-if 'cv_final' in st.session_state:
-    st.divider()
-    # Explicitly using clear tab names to prevent NameErrors
-    tab_resume, tab_letter = st.tabs(["📄 Optimized Resume", "✉️ Cover Letter"])
+# --- DISPLAY & DOWNLOAD ---
+if 'final_cv' in st.session_state:
+    st.write("---")
+    st.markdown("### ✨ PREVIEW & EXPORT")
     
-    with tab_resume:
-        cv_h = st.session_state['cv_final'].replace("\n", "<br>").replace("**", "<b>")
-        st.markdown(f'<div id="cv_o" class="doc-preview">{cv_h}</div>', unsafe_allow_html=True)
-        pdf_button("cv_o", "Optimized_CV.pdf")
-
-    with tab_letter:
-        cl_h = st.session_state['cl_final'].replace("\n", "<br>").replace("**", "<b>")
-        st.markdown(f'<div id="cl_o" class="doc-preview">{cl_h}</div>', unsafe_allow_html=True)
-        pdf_button("cl_o", "Cover_Letter.pdf")
-        
+    # Preview Box
+    st.markdown(f"<div class='cv-preview'>{st.session_state['final_cv']}</div>", unsafe_allow_html=True)
+    
+    # PDF Conversion
+    pdf_bytes = create_pdf(st.session_state['final_cv'])
+    
+    st.download_button(
+        label="📥 DOWNLOAD AS PDF",
+        data=pdf_bytes,
+        file_name=f"CV_{target_job.replace(' ', '_')}.pdf",
+        mime="application/pdf"
+    )

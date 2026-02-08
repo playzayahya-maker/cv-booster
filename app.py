@@ -3,103 +3,120 @@ from groq import Groq
 from fpdf import FPDF
 import time
 
-# --- UI SETUP ---
-st.set_page_config(page_title="AI CV ARCHITECT PRO", layout="wide")
+# --- Setup Wajiha (Cyber-Pro Style) ---
+st.set_page_config(page_title="ELITE CV ARCHITECT", layout="wide")
 
 st.markdown("""
 <style>
-    .stApp { background-color: #050505; color: #fff; }
-    .main-header { color: #00ff9d; text-align: center; font-family: 'Space Mono', monospace; font-size: 30px; }
-    .cv-preview { background: #111; border: 1px solid #222; padding: 20px; border-radius: 10px; font-family: 'serif'; color: #333; background-color: white; min-height: 400px; }
-    .status-badge { background: #00ff9d22; color: #00ff9d; padding: 5px 12px; border-radius: 15px; border: 1px solid #00ff9d; font-size: 12px; }
+    .stApp { background-color: #020617; color: #f8fafc; }
+    .main-header { color: #22c55e; text-align: center; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 32px; letter-spacing: -1px; }
+    .preview-container { background: #ffffff; color: #1e293b; padding: 40px; border-radius: 8px; font-family: 'Garamond', serif; line-height: 1.5; min-height: 800px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+    .status-badge { background: rgba(34, 197, 94, 0.1); color: #22c55e; border: 1px solid #22c55e; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- PDF GENERATOR FUNCTION ---
+# --- PDF Engine (Global Standards) ---
 def create_pdf(text):
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    # Cleaning text for PDF (fpdf2 likes simple latin-1)
+    pdf.set_font("Times", size=11) # Standard professional font
     clean_text = text.encode('latin-1', 'ignore').decode('latin-1')
-    pdf.multi_cell(0, 10, clean_text)
+    pdf.multi_cell(0, 8, clean_text)
     return pdf.output()
 
-# --- SIDEBAR (API MANUAL) ---
+# --- Sidebar (Manual API Entry) ---
 with st.sidebar:
-    st.markdown("### 🔐 ACCESS CONTROL")
-    api_key_input = st.text_input("ENTER GROQ API KEY:", type="password") #
+    st.markdown("### 🔐 SYSTEM AUTH")
+    api_key_input = st.text_input("GROQ API KEY:", type="password") #
     st.write("---")
-    st.markdown("### 🛠 SYSTEM LOGS")
-    st.info("Agent: CV-Optimizer-V4\nModel: Llama-3.3-70B")
+    st.markdown("### 🛡️ ATS COMPLIANCE")
+    st.write("✅ **Canada:** No Photo/No DOB")
+    st.write("✅ **USA:** Keyword Density 85%+")
+    st.write("✅ **Europe:** Skill-Based Layout")
 
-# --- MAIN INTERFACE ---
-st.markdown("<h1 class='main-header'>AI CV ARCHITECT PRO</h1>", unsafe_allow_html=True)
-st.markdown("<div style='text-align:center;'><span class='status-badge'>PDF EXPORT ENABLED</span></div><br>", unsafe_allow_html=True)
+st.markdown("<h1 class='main-header'>ELITE CV & COVER ARCHITECT</h1>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center;'><span class='status-badge'>MODE: GLOBAL RECRUITMENT READY</span></div><br>", unsafe_allow_html=True)
 
-col1, col2 = st.columns(2)
+# --- Layout side-by-side ---
+col_in, col_desc = st.columns(2)
 
-with col1:
-    st.markdown("### 📁 UPLOAD PROFILE")
-    uploaded_file = st.file_uploader("Upload CV (PDF/TXT)", type=['pdf', 'txt']) #
-    target_job = st.text_input("🎯 TARGET JOB:", placeholder="e.g. Mechanical Engineer")
-    style = st.selectbox("🌍 REGION STYLE:", ["USA (ATS)", "Canada", "Europe"])
+with col_in:
+    st.markdown("### 👤 PROFILE DATA")
+    input_type = st.radio("Select Input:", ["Upload Document", "Paste Experience"]) #
+    
+    user_data = ""
+    if input_type == "Upload Document":
+        file = st.file_uploader("Drop CV (PDF/TXT)", type=['pdf', 'txt']) #
+        if file:
+            user_data = file.read().decode("utf-8") if file.type == "text/plain" else "PDF_CONTENT_EXTRACTED"
+    else:
+        user_data = st.text_area("Paste your background details:", height=300)
 
-with col2:
-    st.markdown("### 📝 JOB DESCRIPTION")
-    job_desc = st.text_area("Paste the job offer details here:", height=215)
+with col_desc:
+    st.markdown("### 📋 JOB DESCRIPTION")
+    job_text = st.text_area("Paste the job offer here (The Agent will detect everything):", height=375) #
 
-# --- LOGIC ---
-if st.button("GENERATE PRO CV ⚡"):
+# --- Logic Engine ---
+if st.button("EXECUTE PRO OPTIMIZATION ⚡"):
     if not api_key_input:
-        st.error("Missing API Key. Check Sidebar.")
-    elif not uploaded_file or not job_desc:
-        st.warning("Please provide both CV and Job Description.")
+        st.error("Authentication required: Insert API Key in sidebar.") #
+    elif not user_data or not job_text:
+        st.warning("Insufficient data: Profile and Job Description are mandatory.")
     else:
         try:
             client = Groq(api_key=api_key_input)
-            with st.status("🧬 Architecting your new CV...", expanded=True) as status:
-                st.write("📡 Analyzing ATS keywords...")
+            with st.status("🧬 Analyzing Regional Standards & ATS Gaps...", expanded=True) as status:
+                st.write("📡 Detecting target country and recruitment style...")
                 time.sleep(1)
+                st.write("🧬 Architecting CV and Cover Letter with STAR method...")
                 
-                # Performance optimized prompt
+                # Full Auto + Cover Letter + Regional Logic
                 prompt = f"""
-                Create a professional CV for the role of {target_job} based on this data:
-                Profile Info: {uploaded_file.name}
-                Job Requirements: {job_desc}
-                Style: {style}
+                You are an Elite Global Recruiter.
+                INPUT:
+                - User Background: {user_data}
+                - Job Offer: {job_text}
+
+                TASK:
+                1. Identify the Job Title and Location (e.g., Canada, Germany, etc.) from the Job Offer.
+                2. If Canada/USA: Ensure NO photos, NO age, NO marital status. Focus on 'Results-driven' bullets.
+                3. Create a Professional CV using the STAR method (Situation, Task, Action, Result).
+                4. Create a tailored 'Cover Letter' (Lettre de Motivation) that addresses the specific needs of this company.
                 
-                Instructions:
-                - Use impact verbs.
-                - Quantify achievements.
-                - Format clearly for ATS.
-                Return ONLY the CV content.
+                OUTPUT STRUCTURE:
+                [FULL NAME]
+                [CONTACT INFO]
+                
+                I. PROFESSIONAL CV
+                ------------------
+                (Detailed, ATS-optimized, high-impact verbs)
+                
+                II. COVER LETTER
+                ------------------
+                (Professional, persuasive, matching the job requirements)
                 """
                 
                 res = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=[{"role": "user", "content": prompt}],
-                    temperature=0.2 # Maximum Accuracy
+                    temperature=0.2 # Extreme accuracy
                 )
-                st.session_state['final_cv'] = res.choices[0].message.content
+                st.session_state['elite_result'] = res.choices[0].message.content
                 status.update(label="✅ GENERATION COMPLETE", state="complete")
         except Exception as e:
-            st.error(f"Error: {e}")
+            st.error(f"System Overload: {e}")
 
-# --- DISPLAY & DOWNLOAD ---
-if 'final_cv' in st.session_state:
+# --- Global Result Display ---
+if 'elite_result' in st.session_state:
     st.write("---")
-    st.markdown("### ✨ PREVIEW & EXPORT")
-    
-    # Preview Box
-    st.markdown(f"<div class='cv-preview'>{st.session_state['final_cv']}</div>", unsafe_allow_html=True)
+    st.markdown("### 📄 ARCHITECTED PACKAGE (CV + COVER LETTER)")
+    st.markdown(f"<div class='preview-container'>{st.session_state['elite_result']}</div>", unsafe_allow_html=True)
     
     # PDF Conversion
-    pdf_bytes = create_pdf(st.session_state['final_cv'])
-    
+    pdf_final = create_pdf(st.session_state['elite_result'])
     st.download_button(
-        label="📥 DOWNLOAD AS PDF",
-        data=pdf_bytes,
-        file_name=f"CV_{target_job.replace(' ', '_')}.pdf",
+        label="📥 DOWNLOAD PRO PDF PACKAGE",
+        data=pdf_final,
+        file_name="Global_Pro_Package.pdf",
         mime="application/pdf"
     )

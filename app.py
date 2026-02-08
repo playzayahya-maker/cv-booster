@@ -2,93 +2,103 @@ import streamlit as st
 from groq import Groq
 import pdfplumber
 from fpdf import FPDF
+import io
 
-# --- UI SETUP ---
-st.set_page_config(page_title="CV & Cover Pro", layout="wide")
+# --- 1. CONFIGURATION B7AL L-PHOTO ---
+st.set_page_config(page_title="CV Booster Pro", layout="wide")
+
 st.markdown("""
 <style>
-    .stApp { background-color: #fcfaff; }
-    .doc-box { background: white; padding: 25px; border-radius: 8px; border: 1px solid #ddd; height: 500px; overflow-y: auto; color: #333; }
-    .stButton>button { background: #6d28d9; color: white; width: 100%; border-radius: 8px; }
+    .stApp { background-color: #f4f7fe; }
+    .main-header { color: #4f46e5; font-weight: 800; font-size: 28px; margin-bottom: 20px; }
+    /* Style dial s-sora */
+    .preview-card { background: white; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); font-family: 'Helvetica'; color: #1e293b; }
+    .stButton>button { background: #4f46e5; color: white; border-radius: 8px; font-weight: bold; height: 50px; border: none; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- SAFE PDF ENGINE ---
-def make_pdf(text, title, market):
+# --- 2. FIXED PDF ENGINE (No more StreamlitAPIException) ---
+def generate_safe_pdf(text, title, market):
     pdf = FPDF()
     pdf.add_page()
+    # Header Style b7al Screenshot 233
     pdf.set_font("Helvetica", 'B', 16)
+    pdf.set_text_color(79, 70, 229) 
     pdf.cell(0, 10, title.upper(), ln=True, align='L' if market == "Canada" else 'C')
     pdf.line(10, 22, 200, 22)
     pdf.ln(10)
+    
     pdf.set_font("Helvetica", size=10)
-    # Fix for Screenshot 288/291: Encode to latin-1 but ignore errors
+    pdf.set_text_color(30, 41, 59)
+    # Fix dial encoding bach may-crachich
     safe_text = text.encode('latin-1', 'ignore').decode('latin-1')
-    pdf.multi_cell(0, 6, safe_text)
-    return pdf.output()
+    pdf.multi_cell(0, 7, safe_text)
+    
+    # OUTPUT AS BYTES (Fix dial Screenshot 291)
+    return bytes(pdf.output())
 
-# --- EXTRACTION ---
-def extract_pdf(file):
-    with pdfplumber.open(file) as pdf:
-        return "\n".join([p.extract_text() for p in pdf.pages if p.extract_text()])
+# --- 3. UI LAYOUT B7AL SCREENSHOT 230 ---
+st.markdown("<div class='main-header'>📑 CV Booster Pro</div>", unsafe_allow_html=True)
 
-st.title("🚀 CV & Cover Letter Architect")
-
-# --- SIDEBAR ---
 with st.sidebar:
-    st.header("Settings")
+    st.header("⚙️ Configuration")
     api_key = st.text_input("Groq API Key:", type="password")
-    market = st.selectbox("Target Country:", ["Canada", "Germany", "France", "UK", "Spain", "Italy"])
+    market = st.selectbox("Target Market:", ["Canada", "France", "Germany", "UK", "Spain"])
+    st.write("---")
+    st.info("Protocol: ATS-Friendly + STAR Achievements.")
 
-# --- INPUTS ---
-t1, t2 = st.tabs(["📤 Upload PDF CV", "✍️ Paste Content"])
-input_data = ""
-with t1:
-    up = st.file_uploader("Drop CV here", type=['pdf'], label_visibility="collapsed")
-    if up: input_data = extract_pdf(up)
-with t2:
-    txt = st.text_area("Or paste experience", height=200, label_visibility="collapsed")
-    if txt: input_data += "\n" + txt
+# Tabs b7al s-tsora
+tab_upload, tab_paste = st.tabs(["📤 Subir Archivo", "✍️ Pegar Texto"])
+input_text = ""
 
-# --- ACTION ---
-if st.button("GENERATE BOTH DOCUMENTS"):
-    if not api_key or not input_data:
-        st.error("Missing API Key or CV Data.")
+with tab_upload:
+    up_file = st.file_uploader("Upload CV (PDF)", type=['pdf'], label_visibility="collapsed")
+    if up_file:
+        with pdfplumber.open(up_file) as pdf:
+            input_text = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
+
+with tab_paste:
+    paste_text = st.text_area("Pega el contenido de tu CV aquí:", height=250, label_visibility="collapsed")
+    if paste_text:
+        input_text = paste_text
+
+# --- 4. GENERATION LOGIC ---
+if st.button("GENERAR CV Y COVER LETTER OPTIMIZADO →"):
+    if not api_key or not input_text:
+        st.error("Please provide API Key and Data.")
     else:
         try:
             client = Groq(api_key=api_key)
-            with st.spinner("AI is thinking..."):
-                # One prompt for both to ensure context, but very clear separators
-                prompt = f"Create a professional CV and a matching Cover Letter for {market}. Use STAR method. Use [CV_SECTION] and [COVER_SECTION] to separate them."
-                res = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=[{"role": "user", "content": f"{prompt}\nData: {input_data}"}],
-                    temperature=0.1
-                )
-                full_res = res.choices[0].message.content
-                
-                # Parsing logic to ensure cover is not lost
-                if "[CV_SECTION]" in full_res and "[COVER_SECTION]" in full_res:
-                    st.session_state.cv = full_res.split("[CV_SECTION]")[1].split("[COVER_SECTION]")[0].strip()
-                    st.session_state.cover = full_res.split("[COVER_SECTION]")[1].strip()
-                else:
-                    st.error("AI Response format issue. Please try again.")
+            # Prompt m-fignoli bach i-3ti CV o Cover Letter m-separeryn
+            system_msg = f"Expert Recruiter for {market}. Create a Professional CV and a tailored Cover Letter. Use [CV_DOC] and [LETTER_DOC] as separators."
+            
+            res = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": f"{system_msg}\n\nData: {input_text}"}],
+                temperature=0.2
+            )
+            raw_res = res.choices[0].message.content
+            
+            # Parsing
+            st.session_state.cv_final = raw_res.split("[CV_DOC]")[1].split("[LETTER_DOC]")[0].strip()
+            st.session_state.letter_final = raw_res.split("[LETTER_DOC]")[1].strip()
         except Exception as e:
-            st.error(f"Error: {str(e)}")
+            st.error(f"AI Error: {e}")
 
-# --- FINAL DISPLAY (CV & COVER INDEPENDENT) ---
-if 'cv' in st.session_state and 'cover' in st.session_state:
+# --- 5. RESULTS DISPLAY (Separation Mode) ---
+if 'cv_final' in st.session_state:
     st.divider()
-    col1, col2 = st.columns(2)
+    col_cv, col_letter = st.columns(2)
     
-    with col1:
-        st.subheader("📄 Optimized CV")
-        st.markdown(f"<div class='doc-box'>{st.session_state.cv}</div>", unsafe_allow_html=True)
-        cv_bytes = make_pdf(st.session_state.cv, "Curriculum Vitae", market)
-        st.download_button("📥 Download CV", cv_bytes, "Professional_CV.pdf")
+    with col_cv:
+        st.subheader("📄 Curriculum Vitae")
+        st.markdown(f"<div class='preview-card'>{st.session_state.cv_final}</div>", unsafe_allow_html=True)
+        cv_pdf = generate_safe_pdf(st.session_state.cv_final, "Curriculum Vitae", market)
+        st.download_button("📥 Download CV", data=cv_pdf, file_name=f"CV_{market}.pdf", mime="application/pdf")
 
-    with col2:
-        st.subheader("✉️ Cover Letter")
-        st.markdown(f"<div class='doc-box'>{st.session_state.cover}</div>", unsafe_allow_html=True)
-        cover_bytes = make_pdf(st.session_state.cover, "Cover Letter", market)
-        st.download_button("📥 Download Letter", cover_bytes, "Motivation_Letter.pdf")
+    with col_letter:
+        # L-jiha d l-cover li kant khassa
+        st.subheader("✉️ Carta de Presentación")
+        st.markdown(f"<div class='preview-card'>{st.session_state.letter_final}</div>", unsafe_allow_html=True)
+        letter_pdf = generate_safe_pdf(st.session_state.letter_final, "Cover Letter", market)
+        st.download_button("📥 Download Letter", data=letter_pdf, file_name=f"Cover_{market}.pdf", mime="application/pdf")

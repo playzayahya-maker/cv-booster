@@ -3,31 +3,20 @@ from groq import Groq
 from fpdf import FPDF
 import time
 
-# --- UI Setup (Elite Dark Mode) ---
-st.set_page_config(page_title="ELITE AI ARCHITECT", layout="wide")
+# --- UI Setup ---
+st.set_page_config(page_title="NEURAL ARCHITECT PRO", layout="wide")
 
 st.markdown("""
 <style>
-    /* Dark Background with Neon Accents */
-    .stApp { background-color: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; }
+    .stApp { background-color: #020617; color: #f8fafc; }
+    .main-header { color: #22c55e; text-align: center; font-size: 35px; font-weight: 800; padding: 20px; }
     
-    /* Header & Stats Dashboard */
-    .header-container { text-align: center; padding: 40px 0; border-bottom: 1px solid #1e293b; margin-bottom: 40px; }
-    .main-title { color: #22c55e; font-size: 42px; font-weight: 800; letter-spacing: -2px; margin-bottom: 10px; }
-    .stats-row { display: flex; justify-content: center; gap: 30px; margin-top: 20px; }
-    .stat-box { background: #0f172a; border: 1px solid #1e293b; padding: 10px 25px; border-radius: 12px; font-size: 13px; color: #94a3b8; }
-    .stat-val { color: #22c55e; font-weight: bold; margin-left: 5px; }
-
-    /* Single Input Style */
-    .stTextArea textarea { background-color: #0f172a !important; color: #ffffff !important; border: 1px solid #1e293b !important; border-radius: 15px !important; font-size: 16px !important; }
-    .stTextArea textarea:focus { border-color: #22c55e !important; box-shadow: 0 0 15px rgba(34, 197, 94, 0.2) !important; }
-
-    /* Preview Paper Style (White Professional) */
-    .preview-paper { background: #ffffff; color: #1e293b; padding: 60px; border-radius: 4px; font-family: 'Garamond', serif; font-size: 18px; line-height: 1.6; min-height: 1000px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); margin: 40px auto; max-width: 900px; position: relative; }
-    .preview-paper::before { content: "ATS VERIFIED"; position: absolute; top: 20px; right: 20px; color: #22c55e; border: 2px solid #22c55e; padding: 5px 10px; font-weight: bold; font-family: sans-serif; font-size: 12px; border-radius: 4px; }
+    /* Style d les Buttons d Toggle */
+    .toggle-container { display: flex; justify-content: center; gap: 20px; margin-bottom: 30px; }
+    .stButton>button { width: 200px; border-radius: 10px; font-weight: bold; transition: 0.3s; }
     
-    /* Sidebar Security Style */
-    .sidebar-auth { background: #0f172a; padding: 20px; border-radius: 15px; border: 1px solid #1e293b; margin-bottom: 20px; }
+    /* Paper Style Preview */
+    .preview-paper { background: white; color: #1e293b; padding: 50px; border-radius: 5px; font-family: 'Garamond', serif; min-height: 800px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); line-height: 1.6; margin-top: 30px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -35,100 +24,97 @@ st.markdown("""
 def create_pdf(text):
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Times", size=11)
+    pdf.set_font("Times", size=12)
     clean_text = text.encode('latin-1', 'ignore').decode('latin-1')
-    pdf.multi_cell(0, 8, clean_text)
+    pdf.multi_cell(0, 10, clean_text)
     return pdf.output()
 
-# --- Dashboard Header ---
-st.markdown("""
-<div class='header-container'>
-    <div class='main-title'>NEURAL CV ARCHITECT PRO</div>
-    <div class='stats-row'>
-        <div class='stat-box'>ACCURACY: <span class='stat-val'>98.2%</span></div>
-        <div class='stat-box'>REGION: <span class='stat-val'>GLOBAL (CANADA/USA/EU)</span></div>
-        <div class='stat-box'>ENGINE: <span class='stat-val'>LLAMA-3.3-70B</span></div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# --- Sidebar (Security Panel) ---
+# --- Sidebar API ---
 with st.sidebar:
-    st.markdown("<div class='sidebar-auth'>", unsafe_allow_html=True)
-    st.markdown("### 🔐 SECURITY PANEL")
-    api_key = st.text_input("SYSTEM API KEY:", type="password") #
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("### 🔐 SYSTEM ACCESS")
+    api_key = st.text_input("GROQ API KEY:", type="password")
     st.write("---")
-    st.markdown("### 🔍 AGENT LOGIC")
-    st.caption("1. Content Parsing")
-    st.caption("2. Geo-Formatting Detection")
-    st.caption("3. STAR Achievement Logic")
-    st.caption("4. ATS Cover Letter Sync")
+    st.info("Mode: Smart Toggle\nAuto-Parsing: Active")
 
-# --- Main Interaction ---
-st.markdown("### 📥 CENTRAL INTELLIGENCE INPUT")
-st.markdown("<p style='color: #64748b;'>Paste your raw CV/Experience data AND the target Job Description below. The agent will automatically distinguish and optimize both.</p>", unsafe_allow_html=True)
+st.markdown("<div class='main-header'>NEURAL CV ARCHITECT PRO</div>", unsafe_allow_html=True)
 
-mega_input = st.text_area("", placeholder="Paste raw text here...", height=450) #
+# --- Smart Toggle Logic ---
+if 'input_mode' not in st.session_state:
+    st.session_state.input_mode = None
 
-# Execution
-if st.button("EXECUTE ARCHITECT SCAN ⚡", use_container_width=True):
+st.markdown("<h4 style='text-align:center;'>Khtar kifach bghiti t-7et profile dyalk:</h4>", unsafe_allow_html=True)
+col_btn1, col_btn2 = st.columns(2)
+
+with col_btn1:
+    if st.button("📁 UPLOAD CV (IMAGE/PDF)"):
+        st.session_state.input_mode = 'file'
+
+with col_btn2:
+    if st.button("⌨️ PASTE RAW TEXT"):
+        st.session_state.input_mode = 'text'
+
+# --- Hidden Input Areas ---
+user_data = ""
+
+if st.session_state.input_mode == 'file':
+    st.markdown("---")
+    # Hna t9der t-uploadi Image wlla PDF
+    uploaded_file = st.file_uploader("Uploadi l-CV l-9dim (Image/PDF/TXT):", type=['pdf', 'txt', 'png', 'jpg', 'jpeg'])
+    if uploaded_file:
+        # Ila image, khass OCR (hadi faza khera), walakin t9der t-readiha ka bytes
+        user_data = f"File Uploaded: {uploaded_file.name}"
+        st.success(f"✅ {uploaded_file.name} Ready for Scan")
+
+elif st.session_state.input_mode == 'text':
+    st.markdown("---")
+    user_data = st.text_area("Paste CV Text + Job Description hna:", height=300, placeholder="Copy kolshi hna...")
+
+# --- Common Job Description Area (ila knti baghi t-khlliha dima bayna) ---
+# (Optionnel: L-Agent t-i-parsingi kolchi mn kadr wa7ed kif glti)
+
+# --- Execution ---
+if st.button("EXECUTE PRO SCAN ⚡", use_container_width=True):
     if not api_key:
-        st.error("SYSTEM AUTHENTICATION FAILED: Missing Key.") #
-    elif len(mega_input) < 150:
-        st.warning("DATA INSUFFICIENT: Paste more content to achieve 95% accuracy.")
+        st.error("Missing API Key in Sidebar!")
+    elif not user_data:
+        st.warning("Please provide your data first.")
     else:
         try:
             client = Groq(api_key=api_key)
-            with st.status("🧠 Deep Neural Parsing in Progress...", expanded=True) as status:
-                st.write("📡 Scanning text for job intent and country standards...")
-                time.sleep(1.5)
-                st.write("🧬 Rewriting CV using STAR methodology (Results-Based)...")
-                time.sleep(1)
-                st.write("✉️ Aligning Cover Letter with company values...")
+            with st.status("🧠 Processing Data...", expanded=True) as status:
+                st.write("📡 Separating profile from job requirements...")
                 
-                # Full Auto Intelligent Prompt
+                # Intelligent Prompt for parsing
                 prompt = f"""
-                You are a Senior Career Strategist for high-tier international recruitment.
-                DATA BLOCK: {mega_input}
+                You are an Elite Recruiter. Analyze the provided input. 
+                Identify the Job Title and Location. 
+                Create an ATS-Optimized CV (STAR Method) and a professional Cover Letter.
                 
-                MISSION:
-                1. Detect the Job Title and Target Country from the text.
-                2. Extract the User's background.
-                3. Rewrite everything into an ELITE ATS PACKAGE:
-                   - CV Section: High-impact action verbs, quantifiable metrics, professional formatting.
-                   - Cover Letter Section: Tailored, persuasive, and perfectly aligned with the job's pain points.
+                INPUT DATA:
+                {user_data}
                 
-                RULES:
-                - If North America: NO age/photo.
-                - Use STAR method (Situation, Task, Action, Result) for all experience.
-                - Ensure 100% keyword density for the detected role.
+                Formatting: Canada/USA professional standards.
                 """
                 
                 res = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=[{"role": "user", "content": prompt}],
-                    temperature=0.2 # Extreme focus
+                    temperature=0.2
                 )
-                st.session_state['pro_package'] = res.choices[0].message.content
-                status.update(label="✅ ARCHITECTURE READY", state="complete")
+                st.session_state['final_out'] = res.choices[0].message.content
+                status.update(label="✅ ARCHITECTURE COMPLETE", state="complete")
         except Exception as e:
-            st.error(f"SYSTEM OVERLOAD: {e}")
+            st.error(f"Error: {e}")
 
-# --- Output Display (Paper Style) ---
-if 'pro_package' in st.session_state:
-    st.write("---")
-    st.markdown("<h3 style='text-align:center;'>📄 PRO ARCHITECT PACKAGE</h3>", unsafe_allow_html=True)
+# --- Result Display ---
+if 'final_out' in st.session_state:
+    st.markdown("<div class='preview-paper'>" + st.session_state['final_out'] + "</div>", unsafe_allow_html=True)
     
-    # Paper-style preview
-    st.markdown(f"<div class='preview-paper'>{st.session_state['pro_package']}</div>", unsafe_allow_html=True)
-    
-    # Pro Download Section
-    pdf_final = create_pdf(st.session_state['pro_package'])
+    pdf_bytes = create_pdf(st.session_state['final_out'])
     st.download_button(
-        label="📥 DOWNLOAD CV-READY PDF PACKAGE",
-        data=pdf_final,
-        file_name="Elite_Career_Package.pdf",
+        label="📥 DOWNLOAD PDF PACKAGE",
+        data=pdf_bytes,
+        file_name="Elite_Package.pdf",
         mime="application/pdf",
         use_container_width=True
     )
